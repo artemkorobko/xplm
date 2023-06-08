@@ -9,4 +9,4 @@ supports X-Plane version defined in this library.
 
 # Features
 
-- [X] [XPLMPlugin](https://developer.x-plane.com/sdk/XPLMPlugin)
+- [X] [XPLMPlugin](https://developer.x-plane.com/sdk/XPLMPlugin) (except XPLMEnumerateFeatures, use XPLMHasFeature instead)

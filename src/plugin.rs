@@ -223,3 +223,79 @@ pub fn send_message_to_all_plugins<P: AsMessageParam>(message: i32, param: P) {
         xplm_sys::XPLMSendMessageToPlugin(XPLM_NO_PLUGIN_ID, message, param.as_message_param())
     };
 }
+
+/// Plugin advanced features.
+pub enum Feature {
+    /// Causes plugin to receive drawing hook callbacks when X-Plane builds its off-screen
+    /// reflection and shadow rendering passes.
+    WantsReflections,
+    /// OS X paths will match the native OS X Unix. Windows will use forward slashes but
+    /// preserve C:\ or another drive letter when using complete file paths.
+    UseNativePaths,
+    /// Tells the widgets library to use new, modern X-Plane backed XPLMDisplay windows
+    /// to anchor all widget trees. Without it, widgets will always use legacy windows.
+    UseNativeWidgetsWindows,
+    /// Tells X-Plane to to send the enabling plugin the new XPLM_MSG_DATAREFS_ADDED message
+    /// any time new datarefs are added. The SDK will coalesce consecutive dataref registrations
+    /// to minimize the number of messages sent.
+    WantsDatarefNotifications,
+}
+
+impl Feature {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Feature::WantsReflections => "XPLM_WANTS_REFLECTIONS",
+            Feature::UseNativePaths => "XPLM_USE_NATIVE_PATHS",
+            Feature::UseNativeWidgetsWindows => "XPLM_USE_NATIVE_WIDGET_WINDOWS",
+            Feature::WantsDatarefNotifications => "XPLM_WANTS_DATAREF_NOTIFICATIONS",
+        }
+    }
+}
+
+/// Checks wether the given feature exists.
+///
+/// # Arguments
+/// * `feature` - the feature to check.
+///
+/// # Returns
+/// Returns `true` if the given installation of X-Plane supports a feature. Otherwise returns `false`.
+pub fn has_feature(feature: Feature) -> bool {
+    if let Ok(name) = ffi::CString::new(feature.name()) {
+        unsafe { xplm_sys::XPLMHasFeature(name.as_ptr()) == 1 }
+    } else {
+        false
+    }
+}
+
+/// Checks wether the given feature enabld.
+///
+/// # Arguments
+/// * `feature` - the feature to check.
+///
+/// # Returns
+/// Returns `true` if the given feature is currently enabled for plugin. Otherwise returns `false`.
+pub fn is_feature_enabled(feature: Feature) -> bool {
+    if let Ok(name) = ffi::CString::new(feature.name()) {
+        unsafe { xplm_sys::XPLMIsFeatureEnabled(name.as_ptr()) == 1 }
+    } else {
+        false
+    }
+}
+
+/// Enables a feature for your plugin. This will change the running behavior of X-Plane
+/// and plugin in some way, depending on the feature.
+pub fn enable_feature(feature: Feature) {
+    if let Ok(name) = ffi::CString::new(feature.name()) {
+        const ENABLE: i32 = 1;
+        unsafe { xplm_sys::XPLMEnableFeature(name.as_ptr(), ENABLE) };
+    }
+}
+
+/// Disables a feature for plugin. This will change the running behavior of X-Plane
+/// and plugin in some way, depending on the feature.
+pub fn disable_feature(feature: Feature) {
+    if let Ok(name) = ffi::CString::new(feature.name()) {
+        const DISABLE: i32 = 0;
+        unsafe { xplm_sys::XPLMEnableFeature(name.as_ptr(), DISABLE) };
+    }
+}

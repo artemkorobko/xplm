@@ -7,5 +7,5 @@ edition = "2021"
 thiserror = "1.0"
 xplm-sys = { git = "https://github.com/artemkorobko/xplm-sys.git" }
 
-[patch."https://github.com/artemkorobko/xplm-sys.git"]
-xplm-sys = { path = "../xplm-sys" }
+# [patch."https://github.com/artemkorobko/xplm-sys.git"]
+# xplm-sys = { path = "../xplm-sys" }
