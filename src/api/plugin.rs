@@ -2,7 +2,7 @@ use std::{ffi, string};
 
 use thiserror::Error;
 
-use crate::ffi::FromStringBuf;
+use super::ffi::FromStringBuf;
 
 /// An error returned from plugin API calls
 #[derive(Error, Debug)]
