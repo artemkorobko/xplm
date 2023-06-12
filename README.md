@@ -10,3 +10,4 @@ supports X-Plane version defined in this library.
 # Features
 
 - [X] [XPLMPlugin](https://developer.x-plane.com/sdk/XPLMPlugin) (except XPLMEnumerateFeatures, use XPLMHasFeature instead)
+- [] [XPLMMenus](https://developer.x-plane.com/sdk/XPLMMenus)
