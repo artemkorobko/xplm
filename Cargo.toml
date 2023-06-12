@@ -5,7 +5,4 @@ edition = "2021"
 
 [dependencies]
 thiserror = "1.0"
-xplm-sys = { git = "https://github.com/artemkorobko/xplm-sys.git" }
-
-# [patch."https://github.com/artemkorobko/xplm-sys.git"]
-# xplm-sys = { path = "../xplm-sys" }
+xplm-sys = { path = "../xplm-sys" }
