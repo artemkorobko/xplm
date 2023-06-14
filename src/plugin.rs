@@ -9,26 +9,45 @@ pub trait XPlugin: Sized {
 
 #[macro_export]
 macro_rules! register {
-    ($plugin_type: ty) => {
+    (
+        instance = $plugin_type: ty,
+        name = $name: literal,
+        signature = $signature: literal,
+        description = $description: literal,
+    ) => {
         use xplm::plugin::XPlugin;
 
         static mut PLUGIN_INSTANCE: std::sync::OnceLock<$plugin_type> = std::sync::OnceLock::new();
         const XP_RESULT_OK: ::std::os::raw::c_int = 1;
         const XP_RESULT_ERR: ::std::os::raw::c_int = 0;
 
-        #[allow(non_snake_case)]
         #[no_mangle]
+        #[allow(non_snake_case)]
         pub unsafe extern "C" fn XPluginStart(
             name: *mut ::std::os::raw::c_char,
             signature: *mut ::std::os::raw::c_char,
             description: *mut ::std::os::raw::c_char,
         ) -> ::std::os::raw::c_int {
+            pub unsafe fn copy_to_c_buffer(src: &str, dest: *mut ::std::os::raw::c_char) {
+                let src_len = std::cmp::min(src.len(), 255);
+                let src_c = std::ffi::CString::new(&src[..src_len])
+                    .unwrap_or_else(|_| std::ffi::CString::new("<invalid>").unwrap());
+                let src_c_length = src_c.to_bytes_with_nul().len();
+                std::ptr::copy_nonoverlapping(src_c.as_ptr(), dest, src_c_length);
+            }
+
             // Replacee with get_or_try_init after stabilization https://github.com/rust-lang/rust/issues/109737
             if PLUGIN_INSTANCE.get().is_none() {
                 match <$plugin_type>::start() {
-                    Ok(instance) => PLUGIN_INSTANCE
-                        .set(instance)
-                        .map_or(XP_RESULT_ERR, |_| XP_RESULT_OK),
+                    Ok(instance) => {
+                        copy_to_c_buffer($name, name);
+                        copy_to_c_buffer($signature, signature);
+                        copy_to_c_buffer($description, description);
+
+                        PLUGIN_INSTANCE
+                            .set(instance)
+                            .map_or(XP_RESULT_ERR, |_| XP_RESULT_OK)
+                    }
                     Err(_err) => XP_RESULT_ERR,
                 }
             } else {
@@ -36,16 +55,16 @@ macro_rules! register {
             }
         }
 
-        #[allow(non_snake_case)]
         #[no_mangle]
+        #[allow(non_snake_case)]
         pub unsafe extern "C" fn XPluginStop() {
             if let Some(instance) = PLUGIN_INSTANCE.get_mut() {
                 instance.stop();
             }
         }
 
-        #[allow(non_snake_case)]
         #[no_mangle]
+        #[allow(non_snake_case)]
         pub unsafe extern "C" fn XPluginEnable() -> ::std::os::raw::c_int {
             if let Some(instance) = PLUGIN_INSTANCE.get_mut() {
                 instance.enable().map_or(XP_RESULT_ERR, |_| XP_RESULT_OK)
@@ -54,21 +73,20 @@ macro_rules! register {
             }
         }
 
-        #[allow(non_snake_case)]
         #[no_mangle]
+        #[allow(non_snake_case)]
         pub unsafe extern "C" fn XPluginDisable() {
             if let Some(instance) = PLUGIN_INSTANCE.get_mut() {
                 instance.disable();
             }
         }
 
-        #[allow(non_snake_case)]
-        #[allow(unused_variables)]
         #[no_mangle]
+        #[allow(non_snake_case)]
         pub unsafe extern "C" fn XPluginReceiveMessage(
-            from: ::std::os::raw::c_int,
-            message: ::std::os::raw::c_int,
-            param: *mut ::std::os::raw::c_void,
+            _from: ::std::os::raw::c_int,
+            _message: ::std::os::raw::c_int,
+            _param: *mut ::std::os::raw::c_void,
         ) {
         }
     };
