@@ -143,3 +143,71 @@ pub fn save_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
         Err(UtilitiesError::SaveDataFileError)
     }
 }
+
+/// While the plug-in SDK is only accessible to plugins running inside X-Plane,
+/// the original authors considered extending the API to other applications that
+/// shared basic infrastructure with X-Plane. These enumerations are hold-overs
+/// from that original roadmap; all values other than X-Plane are deprecated.
+/// Your plugin should never need this enumeration.
+pub enum HostApplicationId {
+    Unknown,
+    XPlane,
+    PlaneMaker,
+    WorldMaker,
+    Briefer,
+    PartMaker,
+    YoungsMod,
+    XAuto,
+    XAvion,
+    ControlPad,
+    PFDMap,
+    Radar,
+}
+
+impl From<i32> for HostApplicationId {
+    fn from(value: i32) -> Self {
+        match value {
+            0 => Self::Unknown,
+            1 => Self::XPlane,
+            2 => Self::PlaneMaker,
+            3 => Self::WorldMaker,
+            4 => Self::Briefer,
+            5 => Self::PlaneMaker,
+            6 => Self::YoungsMod,
+            7 => Self::XAuto,
+            8 => Self::XAvion,
+            9 => Self::ControlPad,
+            10 => Self::PFDMap,
+            11 => Self::Radar,
+            _ => Self::Unknown,
+        }
+    }
+}
+
+/// X-Plane and XPLM versions.
+pub struct Versions {
+    /// Host ID of the app running the plugin.
+    pub app_id: HostApplicationId,
+    /// X-Plane version.
+    pub xplane: i32,
+    /// XPLM version.
+    pub xplm: i32,
+}
+
+/// returns the revision of both X-Plane and the XPLM DLL.
+/// In addition returns the host ID of the app running the plugin.
+///
+/// # Returns
+/// Returns [`Versions`].
+pub fn get_versions() -> Versions {
+    let mut xplane_version = 0;
+    let mut xplm_version = 0;
+    let mut host_id = 0;
+    unsafe { xplm_sys::XPLMGetVersions(&mut xplane_version, &mut xplm_version, &mut host_id) };
+
+    Versions {
+        app_id: HostApplicationId::from(host_id),
+        xplane: xplane_version,
+        xplm: xplm_version,
+    }
+}
