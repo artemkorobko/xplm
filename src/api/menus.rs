@@ -69,4 +69,3 @@ pub fn destroy_menu(id: MenuId) {
 // /// Appends a new menu item to the bottom of a menu and returns its index.
 // pub fn append_menu_item(id: &MenuId, name: &str) {
 // }
-
