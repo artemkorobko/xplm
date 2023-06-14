@@ -1,4 +1,7 @@
-use std::{ffi, path, str, string};
+use std::{
+    ffi::{self, CString},
+    path, str, string,
+};
 
 use thiserror::Error;
 
@@ -19,6 +22,12 @@ pub enum UtilitiesError {
     /// Sirectory separator is empty
     #[error("empty directory separator")]
     EmptyDirectorySeparator,
+    /// Invalid data file path string passed to X-Plane
+    #[error("invalid system path")]
+    InvalidDataFilePath(ffi::NulError),
+    /// Unable to load data file
+    #[error("unable to load data file")]
+    LoadDataFileError,
 }
 
 pub type Result<T> = std::result::Result<T, UtilitiesError>;
@@ -61,4 +70,27 @@ pub fn get_directory_separator() -> Result<char> {
         .chars()
         .next()
         .ok_or(UtilitiesError::EmptyDirectorySeparator)
+}
+
+/// Types of data files you can load or unload using the SDK
+#[repr(i32)]
+pub enum DataFileType {
+    /// A situation (.sit) file, which starts off a flight in a given configuration.
+    Situation = 1,
+    /// A situation movie (.smo) file, which replays a past flight.
+    ReplayMovie = 2,
+}
+
+/// Loads a data file of a given type. Paths must be relative to the X-System folder.
+pub fn load_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: P) -> Result<()> {
+    let file_path_str = file_path
+        .as_ref()
+        .to_str()
+        .ok_or(UtilitiesError::LoadDataFileError)?;
+    let c_string = CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
+    if unsafe { xplm_sys::XPLMLoadDataFile(file_type as i32, c_string.as_ptr()) == 1 } {
+        Ok(())
+    } else {
+        Err(UtilitiesError::LoadDataFileError)
+    }
 }
