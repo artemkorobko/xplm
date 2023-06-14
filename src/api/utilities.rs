@@ -94,3 +94,14 @@ pub fn load_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
         Err(UtilitiesError::LoadDataFileError)
     }
 }
+
+/// Clears the replay. This is only valid with replay movies, not sit files.
+pub fn clear_replay() -> Result<()> {
+    if unsafe {
+        xplm_sys::XPLMLoadDataFile(DataFileType::ReplayMovie as i32, std::ptr::null_mut()) == 1
+    } {
+        Ok(())
+    } else {
+        Err(UtilitiesError::LoadDataFileError)
+    }
+}
