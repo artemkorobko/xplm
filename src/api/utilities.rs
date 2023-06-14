@@ -7,43 +7,45 @@ use super::ffi::FromStringBuf;
 /// An error returned from plugin API calls
 #[derive(Error, Debug)]
 pub enum UtilitiesError {
-    /// Empty directory separator
+    /// Invalid system path string passed from X-Plane
+    #[error("invalid system path {0}")]
+    InvalidSystemPath(string::FromUtf8Error),
+    /// Invalid preferences path string passed from X-Plane
+    #[error("invalid preferences path {0}")]
+    InvalidPrefsPath(string::FromUtf8Error),
+    /// Invalid directory separator passed from X-Plane
+    #[error("invalid directory separator {0}")]
+    InvalidDirectorySeparator(str::Utf8Error),
+    /// Sirectory separator is empty
     #[error("empty directory separator")]
     EmptyDirectorySeparator,
-    /// Invalid output string passed from Rust to C
-    // #[error("invalid output string {0}")]
-    // InvalidOutputString(ffi::NulError),
-    /// Invalid input string passed from C to Rust
-    #[error("invalid input string {0}")]
-    InvalidInputString(string::FromUtf8Error),
-    /// Invalid input string slice passed from C to Rust
-    #[error("invalid input string slice {0}")]
-    InvalidInputStringSlice(str::Utf8Error),
 }
 
+pub type Result<T> = std::result::Result<T, UtilitiesError>;
+
 /// Returns the full path to the X-System folder. Note that this is a directory path,
-/// so it ends in a trailing : or / .
+/// so it ends in a trailing `:` or `/`.
 ///
 /// # Returns
-/// Returns system path on success. Otherwise returns [`UtilitiesError::InvalidInputString`].
-pub fn get_system_path() -> Result<path::PathBuf, UtilitiesError> {
+/// Returns system path on success. Otherwise returns [`UtilitiesError::InvalidSystemPath`].
+pub fn get_system_path() -> Result<path::PathBuf> {
     let mut buf = [0; 4096];
     unsafe { xplm_sys::XPLMGetSystemPath(buf.as_mut_ptr()) };
     String::from_string_buf(buf)
         .map(|path| path::PathBuf::from(&path))
-        .map_err(UtilitiesError::InvalidInputString)
+        .map_err(UtilitiesError::InvalidSystemPath)
 }
 
 /// Returns a full path to a file that is within X-Plane’s preferences directory.
 ///
 /// # Returns
-/// Returns preferences file path on success. Otherwise returns [`UtilitiesError::InvalidInputString`].
-pub fn get_prefs_path() -> Result<path::PathBuf, UtilitiesError> {
+/// Returns preferences file path on success. Otherwise returns [`UtilitiesError::InvalidPrefsPath`].
+pub fn get_prefs_path() -> Result<path::PathBuf> {
     let mut buf = [0; 4096];
     unsafe { xplm_sys::XPLMGetPrefsPath(buf.as_mut_ptr()) };
     String::from_string_buf(buf)
         .map(|path| path::PathBuf::from(&path))
-        .map_err(UtilitiesError::InvalidInputString)
+        .map_err(UtilitiesError::InvalidPrefsPath)
 }
 
 /// Returns a char that is the directory separator for the current platform.
@@ -51,11 +53,11 @@ pub fn get_prefs_path() -> Result<path::PathBuf, UtilitiesError> {
 ///
 /// # Returns
 /// Returns directory separator on success.
-/// Otherwise returns [`UtilitiesError::InvalidInputStringSlice`] or [`UtilitiesError::EmptyDirectorySeparator`].
-pub fn get_directory_separator() -> Result<char, UtilitiesError> {
+/// Otherwise returns [`UtilitiesError::InvalidDirectorySeparator`] or [`UtilitiesError::EmptyDirectorySeparator`].
+pub fn get_directory_separator() -> Result<char> {
     unsafe { ffi::CStr::from_ptr(xplm_sys::XPLMGetDirectorySeparator()) }
         .to_str()
-        .map_err(UtilitiesError::InvalidInputStringSlice)?
+        .map_err(UtilitiesError::InvalidDirectorySeparator)?
         .chars()
         .next()
         .ok_or(UtilitiesError::EmptyDirectorySeparator)
