@@ -211,3 +211,42 @@ pub fn get_versions() -> Versions {
         xplm: xplm_version,
     }
 }
+
+/// Defines what language the sim is running in.
+pub enum Language {
+    Unknown,
+    English,
+    French,
+    German,
+    Italian,
+    Spanish,
+    Korean,
+    Russian,
+    Greek,
+    Japanese,
+    Chinese,
+}
+
+impl From<i32> for Language {
+    fn from(value: i32) -> Self {
+        match value {
+            0 => Self::Unknown,
+            1 => Self::English,
+            2 => Self::French,
+            3 => Self::German,
+            4 => Self::Italian,
+            5 => Self::Spanish,
+            6 => Self::Korean,
+            7 => Self::Russian,
+            8 => Self::Greek,
+            9 => Self::Japanese,
+            10 => Self::Chinese,
+            _ => Self::Unknown,
+        }
+    }
+}
+
+/// Returns the [`Language`] the sim is running in.
+pub fn get_language() -> Language {
+    unsafe { xplm_sys::XPLMGetLanguage() }.into()
+}
