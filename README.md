@@ -9,8 +9,7 @@ supports X-Plane version defined in this library.
 
 # Features
 
-- [ ] [XPLMPlugin](https://developer.x-plane.com/
-sdk/XPLMPlugin)
+- [ ] [XPLMPlugin](https://developer.x-plane.com/sdk/XPLMPlugin)
     - [X] Find Plugins.
     - [X] Enable/Disable plugins.
     - [X] Interplugin Messagging.
