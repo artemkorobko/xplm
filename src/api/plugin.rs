@@ -30,6 +30,8 @@ impl From<string::FromUtf8Error> for PluginError {
     }
 }
 
+pub type Result<T> = std::result::Result<T, PluginError>;
+
 /// A plugin identifier
 #[derive(Copy, Clone, Debug)]
 pub struct PluginId(xplm_sys::XPLMPluginID);
@@ -37,7 +39,7 @@ pub struct PluginId(xplm_sys::XPLMPluginID);
 impl TryFrom<xplm_sys::XPLMPluginID> for PluginId {
     type Error = PluginError;
 
-    fn try_from(value: xplm_sys::XPLMPluginID) -> Result<Self, Self::Error> {
+    fn try_from(value: xplm_sys::XPLMPluginID) -> Result<Self> {
         if value < 0 {
             Err(Self::Error::InvalidId(value))
         } else {
@@ -50,7 +52,7 @@ impl TryFrom<xplm_sys::XPLMPluginID> for PluginId {
 ///
 /// # Returns
 /// Returns [`PluginId`] in case of success. Otherwise returns [`PluginError::InvalidId`].
-pub fn get_my_id() -> Result<PluginId, PluginError> {
+pub fn get_my_id() -> Result<PluginId> {
     let id = unsafe { xplm_sys::XPLMGetMyID() };
     PluginId::try_from(id)
 }
@@ -67,7 +69,7 @@ pub fn count_plugins() -> usize {
 ///
 /// # Returns
 /// Returns [`PluginId`] in case of success. Otherwise returns [`PluginError::InvalidId`].
-pub fn get_nth_plugin(index: usize) -> Result<PluginId, PluginError> {
+pub fn get_nth_plugin(index: usize) -> Result<PluginId> {
     let id = unsafe { xplm_sys::XPLMGetNthPlugin(index as i32) };
     PluginId::try_from(id)
 }
@@ -82,7 +84,7 @@ pub fn get_nth_plugin(index: usize) -> Result<PluginId, PluginError> {
 /// Returns [`PluginId`] in case of success. Otherwise returns
 /// * [`PluginError::InvalidId`] if the path does not point to a currently loaded plug-in.
 /// * [`PluginError::InvalidOutputString`] if path contains invalid characters.
-pub fn find_plugin_by_path(path: &str) -> Result<PluginId, PluginError> {
+pub fn find_plugin_by_path(path: &str) -> Result<PluginId> {
     let c_string = ffi::CString::new(path)?;
     let id = unsafe { xplm_sys::XPLMFindPluginByPath(c_string.as_ptr()) };
     PluginId::try_from(id)
@@ -101,7 +103,7 @@ pub fn find_plugin_by_path(path: &str) -> Result<PluginId, PluginError> {
 /// Returns [`PluginId`] in case of success. Otherwise returns
 /// * [`PluginError::InvalidId`] if the path does not point to a currently loaded plug-in.
 /// * [`PluginError::InvalidOutputString`] if path contains invalid characters.
-pub fn find_plugin_by_signature(signature: &str) -> Result<PluginId, PluginError> {
+pub fn find_plugin_by_signature(signature: &str) -> Result<PluginId> {
     let c_string = ffi::CString::new(signature)?;
     let id = unsafe { xplm_sys::XPLMFindPluginBySignature(c_string.as_ptr()) };
     PluginId::try_from(id)
@@ -128,7 +130,7 @@ pub struct PluginInfo {
 /// Returns [`PluginInfo`] in case of success.
 /// Otherwise returns [`PluginError::InvalidInputString`] if at leat one of
 /// the [`PluginInfo`] fields contains invalid character.
-pub fn get_plugin_info(id: &PluginId) -> Result<PluginInfo, PluginError> {
+pub fn get_plugin_info(id: &PluginId) -> Result<PluginInfo> {
     const BUF_LEN: usize = 256;
     let mut out_name = [0; BUF_LEN];
     let mut out_file_path = [0; BUF_LEN];
