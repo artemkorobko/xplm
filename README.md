@@ -11,3 +11,4 @@ supports X-Plane version defined in this library.
 
 - [X] [XPLMPlugin](https://developer.x-plane.com/sdk/XPLMPlugin) (except XPLMEnumerateFeatures, use XPLMHasFeature instead)
 - [] [XPLMMenus](https://developer.x-plane.com/sdk/XPLMMenus)
+- [] [XPLMUtilities](https://developer.x-plane.com/sdk/XPLMUtilities)
