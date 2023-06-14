@@ -1,7 +1,4 @@
-use std::{
-    ffi::{self, CString},
-    path, str, string,
-};
+use std::{ffi, path, str, string, sync::OnceLock};
 
 use thiserror::Error;
 
@@ -99,7 +96,7 @@ pub fn load_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
         .as_ref()
         .to_str()
         .ok_or(UtilitiesError::LoadDataFileError)?;
-    let c_string = CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
+    let c_string = ffi::CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
     if unsafe { xplm_sys::XPLMLoadDataFile(file_type as i32, c_string.as_ptr()) == 1 } {
         Ok(())
     } else {
@@ -136,7 +133,7 @@ pub fn save_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
         .as_ref()
         .to_str()
         .ok_or(UtilitiesError::SaveDataFileError)?;
-    let c_string = CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
+    let c_string = ffi::CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
     if unsafe { xplm_sys::XPLMSaveDataFile(file_type as i32, c_string.as_ptr()) == 1 } {
         Ok(())
     } else {
@@ -249,4 +246,51 @@ impl From<i32> for Language {
 /// Returns the [`Language`] the sim is running in.
 pub fn get_language() -> Language {
     unsafe { xplm_sys::XPLMGetLanguage() }.into()
+}
+
+static ERROR_CALLBACK: OnceLock<fn(&str)> = OnceLock::new();
+
+/// Installs an error-reporting callback for your plugin. Normally the plugin
+/// system performs minimum diagnostics to maximize performance.
+/// When you install an error callback, you will receive calls due to certain plugin errors,
+/// such as passing bad parameters or incorrect data.
+///
+/// Important: the error callback determines programming errors, e.g. bad API parameters.
+/// Every error that is returned by the error callback represents a mistake in your plugin
+/// that you should fix. Error callbacks are not used to report expected run-time
+/// problems (e.g. disk I/O errors).
+///
+/// Installing an error callback may activate error checking code that would not normally run,
+/// and this may adversely affect performance, so do not leave error callbacks installed in
+/// shipping plugins. Since the only useful response to an error is to change code, error
+/// callbacks are not useful “in the field”.
+///
+/// # Arguments
+/// * `callback` - a function which accepts `&str` messages.
+pub fn set_error_callback(callback: fn(&str)) {
+    unsafe extern "C" fn error_callback(message: *const ::std::os::raw::c_char) {
+        let message_c = ffi::CStr::from_ptr(message);
+        match message_c.to_str() {
+            Ok(message_str) => {
+                if let Some(handler) = ERROR_CALLBACK.get() {
+                    handler(message_str)
+                }
+            }
+            Err(_) => debug_string("Error handler called with an invalid message"),
+        }
+    }
+
+    ERROR_CALLBACK.get_or_init(|| callback);
+    unsafe { xplm_sys::XPLMSetErrorCallback(Some(error_callback)) };
+}
+
+/// Outputs a string to the `Log.txt` file. The file is immediately flushed so the data is not lost.
+/// This does cause a performance penalty.
+///
+/// # Arguments
+/// * `message` - a message that will be written to the log file.
+pub fn debug_string<T: Into<String>>(message: T) {
+    if let Ok(message_c) = ffi::CString::new(message.into()) {
+        unsafe { xplm_sys::XPLMDebugString(message_c.as_ptr()) };
+    }
 }
