@@ -9,6 +9,13 @@ supports X-Plane version defined in this library.
 
 # Features
 
-- [X] [XPLMPlugin](https://developer.x-plane.com/sdk/XPLMPlugin) (except XPLMEnumerateFeatures, use XPLMHasFeature instead)
-- [] [XPLMMenus](https://developer.x-plane.com/sdk/XPLMMenus)
-- [] [XPLMUtilities](https://developer.x-plane.com/sdk/XPLMUtilities) (except XPLMExtractFileAndPath and XPLMGetDirectoryContents, use Rust equivalents instead)
+- [ ] [XPLMPlugin](https://developer.x-plane.com/
+sdk/XPLMPlugin)
+    - [X] Find Plugins.
+    - [X] Enable/Disable plugins.
+    - [X] Interplugin Messagging.
+    - [ ] Plugin Features API. `XPLMEnumerateFeatures` is not yet implemented.
+- [ ] [XPLMMenus](https://developer.x-plane.com/sdk/XPLMMenus)
+- [ ] [XPLMUtilities](https://developer.x-plane.com/sdk/XPLMUtilities)
+    - [X] Full and Relative Paths.  
+`XPLMExtractFileAndPath` and `XPLMGetDirectoryContents` functions are not mapped to safe Rust because there is an ability use Rust equivalent functions instead.
