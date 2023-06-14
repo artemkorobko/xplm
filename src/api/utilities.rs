@@ -28,6 +28,9 @@ pub enum UtilitiesError {
     /// Unable to load data file
     #[error("unable to load data file")]
     LoadDataFileError,
+    /// Unable to save data file
+    #[error("unable to save data file")]
+    SaveDataFileError,
 }
 
 pub type Result<T> = std::result::Result<T, UtilitiesError>;
@@ -72,7 +75,7 @@ pub fn get_directory_separator() -> Result<char> {
         .ok_or(UtilitiesError::EmptyDirectorySeparator)
 }
 
-/// Types of data files you can load or unload using the SDK
+/// Types of data files you can load or unload using the SDK.
 #[repr(i32)]
 pub enum DataFileType {
     /// A situation (.sit) file, which starts off a flight in a given configuration.
@@ -81,7 +84,16 @@ pub enum DataFileType {
     ReplayMovie = 2,
 }
 
-/// Loads a data file of a given type. Paths must be relative to the X-System folder.
+/// Loads a data file of a given type.
+///
+/// # Arguments
+/// * `file_type` - the type of the file to load. See [`DataFileType`].
+/// * `file_path` - the file path that must be relative to the X-System folder.
+///
+/// # Returns
+/// Returns `Ok` in case of success. Otherwise returns
+/// * [`UtilitiesError::LoadDataFileError`] if data file can't be loaded.
+/// * [`UtilitiesError::InvalidDataFilePath`] if file_path contains invalid characters.
 pub fn load_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: P) -> Result<()> {
     let file_path_str = file_path
         .as_ref()
@@ -96,6 +108,9 @@ pub fn load_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
 }
 
 /// Clears the replay. This is only valid with replay movies, not sit files.
+///
+/// # Returns
+/// Returns `Ok` in case of success. Otherwise returns [`UtilitiesError::LoadDataFileError`].
 pub fn clear_replay() -> Result<()> {
     if unsafe {
         xplm_sys::XPLMLoadDataFile(DataFileType::ReplayMovie as i32, std::ptr::null_mut()) == 1
@@ -103,5 +118,28 @@ pub fn clear_replay() -> Result<()> {
         Ok(())
     } else {
         Err(UtilitiesError::LoadDataFileError)
+    }
+}
+
+/// Saves the current situation or replay.
+///
+/// # Arguments
+/// * `file_type` - the type of the file to save. See [`DataFileType`].
+/// * `file_path` - the file path that must be relative to the X-System folder.
+///
+/// # Returns
+/// Returns `Ok` in case of success. Otherwise returns
+/// * [`UtilitiesError::SaveDataFileError`] if data file can't be loaded.
+/// * [`UtilitiesError::InvalidDataFilePath`] if file_path contains invalid characters.
+pub fn save_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: P) -> Result<()> {
+    let file_path_str = file_path
+        .as_ref()
+        .to_str()
+        .ok_or(UtilitiesError::SaveDataFileError)?;
+    let c_string = CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
+    if unsafe { xplm_sys::XPLMSaveDataFile(file_type as i32, c_string.as_ptr()) == 1 } {
+        Ok(())
+    } else {
+        Err(UtilitiesError::SaveDataFileError)
     }
 }
