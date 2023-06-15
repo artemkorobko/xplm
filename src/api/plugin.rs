@@ -1,8 +1,6 @@
-use std::{ffi, string};
+use std::ffi;
 
 use thiserror::Error;
-
-use super::ffi::FromStringBuf;
 
 /// An error returned from plugin API calls
 #[derive(Error, Debug)]
@@ -18,16 +16,16 @@ pub enum PluginError {
     InvalidPluginSignature(ffi::NulError),
     /// Invalid plugin info name passed from X-Plane
     #[error("invalid plugin info name string {0}")]
-    InvalidInfoName(string::FromUtf8Error),
+    InvalidInfoName(ffi::IntoStringError),
     /// Invalid plugin info file path passed from X-Plane
     #[error("invalid plugin info file path string {0}")]
-    InvalidInfoFilePath(string::FromUtf8Error),
+    InvalidInfoFilePath(ffi::IntoStringError),
     /// Invalid plugin info signature passed from X-Plane
     #[error("invalid plugin info signature string {0}")]
-    InvalidInfoSignature(string::FromUtf8Error),
+    InvalidInfoSignature(ffi::IntoStringError),
     /// Invalid plugin info description passed from X-Plane
     #[error("invalid plugin info description string {0}")]
-    InvalidInfoDescription(string::FromUtf8Error),
+    InvalidInfoDescription(ffi::IntoStringError),
 }
 
 pub type Result<T> = std::result::Result<T, PluginError>;
@@ -84,9 +82,9 @@ pub fn get_nth_plugin(index: usize) -> Result<PluginId> {
 /// Returns [`PluginId`] in case of success. Otherwise returns
 /// * [`PluginError::InvalidId`] if the path does not point to a currently loaded plug-in.
 /// * [`PluginError::InvalidPluginPath`] if path contains invalid characters.
-pub fn find_plugin_by_path(path: &str) -> Result<PluginId> {
-    let c_string = ffi::CString::new(path).map_err(PluginError::InvalidPluginPath)?;
-    let id = unsafe { xplm_sys::XPLMFindPluginByPath(c_string.as_ptr()) };
+pub fn find_plugin_by_path<T: Into<String>>(path: T) -> Result<PluginId> {
+    let string_c = ffi::CString::new(path.into()).map_err(PluginError::InvalidPluginPath)?;
+    let id = unsafe { xplm_sys::XPLMFindPluginByPath(string_c.as_ptr()) };
     PluginId::try_from(id)
 }
 
@@ -103,9 +101,10 @@ pub fn find_plugin_by_path(path: &str) -> Result<PluginId> {
 /// Returns [`PluginId`] in case of success. Otherwise returns
 /// * [`PluginError::InvalidId`] if the path does not point to a currently loaded plug-in.
 /// * [`PluginError::InvalidPluginSignature`] if path contains invalid characters.
-pub fn find_plugin_by_signature(signature: &str) -> Result<PluginId> {
-    let c_string = ffi::CString::new(signature).map_err(PluginError::InvalidPluginSignature)?;
-    let id = unsafe { xplm_sys::XPLMFindPluginBySignature(c_string.as_ptr()) };
+pub fn find_plugin_by_signature<T: Into<String>>(signature: T) -> Result<PluginId> {
+    let string_c =
+        ffi::CString::new(signature.into()).map_err(PluginError::InvalidPluginSignature)?;
+    let id = unsafe { xplm_sys::XPLMFindPluginBySignature(string_c.as_ptr()) };
     PluginId::try_from(id)
 }
 
@@ -131,30 +130,46 @@ pub struct PluginInfo {
 /// Otherwise returns [`PluginError::InvalidInputString`] if at leat one of
 /// the [`PluginInfo`] fields contains invalid character.
 pub fn get_plugin_info(id: &PluginId) -> Result<PluginInfo> {
-    const BUF_LEN: usize = 256;
-    let mut out_name = [0; BUF_LEN];
-    let mut out_file_path = [0; BUF_LEN];
-    let mut out_signature = [0; BUF_LEN];
-    let mut out_description = [0; BUF_LEN];
+    let (name, file_path, signature, description) = unsafe {
+        const BUF_LEN: usize = 256;
+        let mut out_name = [0; BUF_LEN];
+        let mut out_file_path = [0; BUF_LEN];
+        let mut out_signature = [0; BUF_LEN];
+        let mut out_description = [0; BUF_LEN];
 
-    unsafe {
         xplm_sys::XPLMGetPluginInfo(
             id.0,
             out_name.as_mut_ptr(),
             out_file_path.as_mut_ptr(),
             out_signature.as_mut_ptr(),
             out_description.as_mut_ptr(),
-        )
+        );
+
+        let name = ffi::CStr::from_ptr(out_name.as_ptr())
+            .to_owned()
+            .into_string()
+            .map_err(PluginError::InvalidInfoName)?;
+        let file_path = ffi::CStr::from_ptr(out_file_path.as_ptr())
+            .to_owned()
+            .into_string()
+            .map_err(PluginError::InvalidInfoFilePath)?;
+        let signature = ffi::CStr::from_ptr(out_signature.as_ptr())
+            .to_owned()
+            .into_string()
+            .map_err(PluginError::InvalidInfoSignature)?;
+        let description = ffi::CStr::from_ptr(out_description.as_ptr())
+            .to_owned()
+            .into_string()
+            .map_err(PluginError::InvalidInfoDescription)?;
+
+        (name, file_path, signature, description)
     };
 
     Ok(PluginInfo {
-        name: String::from_string_buf(out_name).map_err(PluginError::InvalidInfoName)?,
-        file_path: String::from_string_buf(out_file_path)
-            .map_err(PluginError::InvalidInfoFilePath)?,
-        signature: String::from_string_buf(out_signature)
-            .map_err(PluginError::InvalidInfoSignature)?,
-        description: String::from_string_buf(out_description)
-            .map_err(PluginError::InvalidInfoDescription)?,
+        name,
+        file_path,
+        signature,
+        description,
     })
 }
 
