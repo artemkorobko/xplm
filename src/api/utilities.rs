@@ -498,3 +498,11 @@ pub fn command_begin(command: &Command) {
 pub fn command_end(command: &Command) {
     unsafe { xplm_sys::XPLMCommandEnd(command.0) };
 }
+
+/// Executes a given command momentarily, that is, the command begins and ends immediately.
+///
+/// # Arguments
+/// * `command` - the [`Command`] to execute.
+pub fn command_once(command: &Command) {
+    unsafe { xplm_sys::XPLMCommandOnce(command.0) };
+}
