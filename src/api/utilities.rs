@@ -1,4 +1,4 @@
-use std::{ffi, path, str, sync::OnceLock};
+use std::{ffi, ops::DerefMut, path, str, sync::OnceLock};
 
 use thiserror::Error;
 
@@ -549,4 +549,76 @@ where
     } else {
         Ok(Some(Command(command)))
     }
+}
+
+pub trait CommandHandler: 'static {
+    /// Called when the command begins (corresponds to a button being pressed down)
+    fn command_begin(&mut self);
+    /// Called frequently while the command button is held down
+    fn command_continue(&mut self);
+    /// Called when the command ends (corresponds to a button being released)
+    fn command_end(&mut self);
+}
+
+pub struct OwnedCommandLink {
+    command: xplm_sys::XPLMCommandRef,
+    handler: Box<dyn CommandHandler>,
+}
+
+pub struct OwnedCommand {
+    link: Box<OwnedCommandLink>,
+}
+
+/// A command execution time.
+pub enum CommandExecutionTime {
+    /// A callback will run before X-Plane.
+    BeforeXPlane = 1,
+    /// A callback will run after X-Plane.
+    AfterXPlane = 0,
+}
+
+pub fn register_command_handler<H: CommandHandler>(
+    command: &Command,
+    execution_time: CommandExecutionTime,
+    handler: H,
+) -> OwnedCommand {
+    unsafe extern "C" fn command_handler(
+        command: xplm_sys::XPLMCommandRef,
+        phase: xplm_sys::XPLMCommandPhase,
+        refcon: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int {
+        const CONTINUE_EXECUTION: ::std::os::raw::c_int = 1;
+        const TERMINATE_EXECUTION: ::std::os::raw::c_int = 1;
+        let link = refcon as *mut OwnedCommandLink;
+        if (*link).command == command {
+            let handler = (*link).handler.deref_mut();
+            match phase as ::std::os::raw::c_uint {
+                xplm_sys::xplm_CommandBegin => (*handler).command_begin(),
+                xplm_sys::xplm_CommandContinue => (*handler).command_continue(),
+                xplm_sys::xplm_CommandEnd => (*handler).command_end(),
+                _ => {}
+            };
+            TERMINATE_EXECUTION
+        } else {
+            CONTINUE_EXECUTION
+        }
+    }
+
+    let mut link = Box::new(OwnedCommandLink {
+        command: command.0,
+        handler: Box::new(handler),
+    });
+
+    let link_ptr: *mut OwnedCommandLink = link.deref_mut();
+
+    unsafe {
+        xplm_sys::XPLMRegisterCommandHandler(
+            command.0,
+            Some(command_handler),
+            execution_time as ::std::os::raw::c_int,
+            link_ptr as *mut ::std::os::raw::c_void,
+        )
+    };
+
+    OwnedCommand { link }
 }
