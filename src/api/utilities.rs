@@ -32,6 +32,9 @@ pub enum UtilitiesError {
     /// Invalid command name string passed to X-Plane
     #[error("invalid command name {0}")]
     InvalidCommandName(ffi::NulError),
+    /// Invalid command description string passed to X-Plane
+    #[error("invalid command description {0}")]
+    InvalidCommandDescription(ffi::NulError),
 }
 
 pub type Result<T> = std::result::Result<T, UtilitiesError>;
@@ -81,7 +84,6 @@ pub fn get_directory_separator() -> Result<char> {
 }
 
 /// Types of data files you can load or unload using the SDK.
-#[repr(i32)]
 pub enum DataFileType {
     /// A situation (.sit) file, which starts off a flight in a given configuration.
     Situation = 1,
@@ -106,9 +108,14 @@ pub fn load_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
         .ok_or(UtilitiesError::LoadDataFileError)?;
     let file_path_c =
         ffi::CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
-    let is_loaded =
-        unsafe { xplm_sys::XPLMLoadDataFile(file_type as i32, file_path_c.as_ptr()) == 1 };
-    if is_loaded {
+    let is_loaded = unsafe {
+        xplm_sys::XPLMLoadDataFile(
+            file_type as xplm_sys::XPLMDataFileType,
+            file_path_c.as_ptr(),
+        )
+    };
+
+    if is_loaded == 1 {
         Ok(())
     } else {
         Err(UtilitiesError::LoadDataFileError)
@@ -120,9 +127,14 @@ pub fn load_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
 /// # Returns
 /// Returns `Ok` in case of success. Otherwise returns [`UtilitiesError::LoadDataFileError`].
 pub fn clear_replay() -> Result<()> {
-    let file_type = DataFileType::ReplayMovie as i32;
-    let is_loaded = unsafe { xplm_sys::XPLMLoadDataFile(file_type, std::ptr::null_mut()) == 1 };
-    if is_loaded {
+    let is_loaded = unsafe {
+        xplm_sys::XPLMLoadDataFile(
+            DataFileType::ReplayMovie as xplm_sys::XPLMDataFileType,
+            std::ptr::null_mut(),
+        )
+    };
+
+    if is_loaded == 1 {
         Ok(())
     } else {
         Err(UtilitiesError::LoadDataFileError)
@@ -146,9 +158,14 @@ pub fn save_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
         .ok_or(UtilitiesError::SaveDataFileError)?;
     let file_path_c =
         ffi::CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
-    let is_saved =
-        unsafe { xplm_sys::XPLMSaveDataFile(file_type as i32, file_path_c.as_ptr()) == 1 };
-    if is_saved {
+    let is_saved = unsafe {
+        xplm_sys::XPLMSaveDataFile(
+            file_type as xplm_sys::XPLMDataFileType,
+            file_path_c.as_ptr(),
+        )
+    };
+
+    if is_saved == 1 {
         Ok(())
     } else {
         Err(UtilitiesError::SaveDataFileError)
@@ -175,8 +192,8 @@ pub enum HostApplicationId {
     Radar,
 }
 
-impl From<i32> for HostApplicationId {
-    fn from(value: i32) -> Self {
+impl From<xplm_sys::XPLMHostApplicationID> for HostApplicationId {
+    fn from(value: xplm_sys::XPLMHostApplicationID) -> Self {
         match value {
             0 => Self::Unknown,
             1 => Self::XPlane,
@@ -237,8 +254,8 @@ pub enum Language {
     Chinese,
 }
 
-impl From<i32> for Language {
-    fn from(value: i32) -> Self {
+impl From<xplm_sys::XPLMLanguageCode> for Language {
+    fn from(value: xplm_sys::XPLMLanguageCode) -> Self {
         match value {
             0 => Self::Unknown,
             1 => Self::English,
@@ -505,4 +522,31 @@ pub fn command_end(command: &Command) {
 /// * `command` - the [`Command`] to execute.
 pub fn command_once(command: &Command) {
     unsafe { xplm_sys::XPLMCommandOnce(command.0) };
+}
+
+/// Creates a new command for a given name and description.
+///
+/// # Arguments
+/// * `name` - a command name.
+/// * `description` - a command description.
+///
+/// # Returns
+/// Returns [`Command`] in case of success or existance.
+/// - None in case of creation failure.
+/// - [`UtilitiesError::InvalidCommandName`] in case of malformed name argument.
+/// - [`UtilitiesError::InvalidCommandDescription`] in case of malformed description argument.
+pub fn create_command<N, D>(name: N, description: D) -> Result<Option<Command>>
+where
+    N: Into<String>,
+    D: Into<String>,
+{
+    let name_c = ffi::CString::new(name.into()).map_err(UtilitiesError::InvalidCommandName)?;
+    let description_c =
+        ffi::CString::new(description.into()).map_err(UtilitiesError::InvalidCommandDescription)?;
+    let command = unsafe { xplm_sys::XPLMCreateCommand(name_c.as_ptr(), description_c.as_ptr()) };
+    if command.is_null() {
+        Ok(None)
+    } else {
+        Ok(Some(Command(command)))
+    }
 }
