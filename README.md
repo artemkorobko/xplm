@@ -17,5 +17,6 @@ supports X-Plane version defined in this library.
 - [ ] [XPLMMenus](https://developer.x-plane.com/sdk/XPLMMenus)
 - [ ] [XPLMUtilities](https://developer.x-plane.com/sdk/XPLMUtilities)
     - [X] Full and Relative Paths.  
-    - [ ] X-Plane Misc except `XPLMFindSymbol`.  
+    - [X] X-Plane Misc except `XPLMFindSymbol`.  
+    - [ ] Command management.
 `XPLMExtractFileAndPath` and `XPLMGetDirectoryContents` functions are not mapped to safe Rust because there is an ability use Rust equivalent functions instead.

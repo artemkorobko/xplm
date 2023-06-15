@@ -29,6 +29,9 @@ pub enum UtilitiesError {
     /// Invalid virtual key description string returned from X-Plane
     #[error("invalid virtual key description {0}")]
     InvalidVKDescription(ffi::IntoStringError),
+    /// Invalid command name string passed to X-Plane
+    #[error("invalid command name {0}")]
+    InvalidCommandName(ffi::NulError),
 }
 
 pub type Result<T> = std::result::Result<T, UtilitiesError>;
@@ -456,4 +459,26 @@ pub fn get_virtual_key_description(key: VirtualKey) -> Result<Option<String>> {
 /// Reloads the current set of scenery.
 pub fn reload_scenery() {
     unsafe { xplm_sys::XPLMReloadScenery() };
+}
+
+/// An opaque identifier for an X-Plane command
+pub struct Command(xplm_sys::XPLMCommandRef);
+
+/// Looks up a command by name.
+///
+/// # Arguments
+/// * `name` - a command name.
+///
+/// # Returns
+/// Returns [`Command`] on success. Otherwise returns:
+/// - [`None`] in case command does not exists.
+/// - [`UtilitiesError::InvalidCommandName`] in case of malformed command name.
+pub fn find_command<T: Into<String>>(name: T) -> Result<Option<Command>> {
+    let name_c = ffi::CString::new(name.into()).map_err(UtilitiesError::InvalidCommandName)?;
+    let command = unsafe { xplm_sys::XPLMFindCommand(name_c.as_ptr()) };
+    if command.is_null() {
+        Ok(None)
+    } else {
+        Ok(Some(Command(command)))
+    }
 }
