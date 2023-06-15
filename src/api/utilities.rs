@@ -482,3 +482,12 @@ pub fn find_command<T: Into<String>>(name: T) -> Result<Option<Command>> {
         Ok(Some(Command(command)))
     }
 }
+
+/// Starts the execution of a command.
+/// 
+/// # Arguments
+/// * `command` - the [`Command`] to begin execution of.
+pub fn command_begin(command: &Command) {
+    unsafe { xplm_sys::XPLMCommandBegin(command.0) };
+}
+
