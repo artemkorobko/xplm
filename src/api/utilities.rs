@@ -452,3 +452,8 @@ pub fn get_virtual_key_description(key: VirtualKey) -> Result<Option<String>> {
     }
     .map_err(UtilitiesError::InvalidVKDescription)
 }
+
+/// Reloads the current set of scenery.
+pub fn reload_scenery() {
+    unsafe { xplm_sys::XPLMReloadScenery() };
+}
