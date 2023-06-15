@@ -534,23 +534,33 @@ where
 
 pub trait CommandHandler: 'static {
     /// Called when the command begins (corresponds to a button being pressed down)
-    fn command_begin(&mut self);
+    fn command_begin(&mut self, command: Command);
     /// Called frequently while the command button is held down
-    fn command_continue(&mut self);
+    fn command_continue(&mut self, command: Command);
     /// Called when the command ends (corresponds to a button being released)
-    fn command_end(&mut self);
+    fn command_end(&mut self, command: Command);
 }
 
+/// A link to [`CommandHandler`] for a given [`Command`].
 pub struct OwnedCommandLink {
     command: xplm_sys::XPLMCommandRef,
     handler: Box<dyn CommandHandler>,
 }
 
-pub struct OwnedCommand {
+/// A command handler record to keep a registration alive.
+pub struct CommandHandlerRecord {
     link: Box<OwnedCommandLink>,
+    execution_time: CommandExecutionTime,
+}
+
+impl Drop for CommandHandlerRecord {
+    fn drop(&mut self) {
+        unregister_command_handler(self);
+    }
 }
 
 /// A command execution time.
+#[derive(Copy, Clone)]
 pub enum CommandExecutionTime {
     /// A callback will run before X-Plane.
     BeforeXPlane = 1,
@@ -558,33 +568,21 @@ pub enum CommandExecutionTime {
     AfterXPlane = 0,
 }
 
+/// Registers a callback to be called when a command is executed.
+///
+/// # Arguments
+/// * `command` - the command to attach the handler to.
+/// * `execution_time` - the time when handler should be executed. See [`CommandExecutionTime`].
+/// * `handler` - the handler which handles command execution. See [`CommandHandler`].
+///
+/// # Returns
+/// Returns a [`CommandHandlerRecord`] which should be kept util execution is needed.
+/// Dropping this record will unregister the handler.
 pub fn register_command_handler<H: CommandHandler>(
     command: &Command,
     execution_time: CommandExecutionTime,
     handler: H,
-) -> OwnedCommand {
-    unsafe extern "C" fn command_handler(
-        command: xplm_sys::XPLMCommandRef,
-        phase: xplm_sys::XPLMCommandPhase,
-        refcon: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int {
-        const CONTINUE_EXECUTION: ::std::os::raw::c_int = 1;
-        const TERMINATE_EXECUTION: ::std::os::raw::c_int = 1;
-        let link = refcon as *mut OwnedCommandLink;
-        if (*link).command == command {
-            let handler = (*link).handler.deref_mut();
-            match phase as ::std::os::raw::c_uint {
-                xplm_sys::xplm_CommandBegin => (*handler).command_begin(),
-                xplm_sys::xplm_CommandContinue => (*handler).command_continue(),
-                xplm_sys::xplm_CommandEnd => (*handler).command_end(),
-                _ => {}
-            };
-            TERMINATE_EXECUTION
-        } else {
-            CONTINUE_EXECUTION
-        }
-    }
-
+) -> CommandHandlerRecord {
     let mut link = Box::new(OwnedCommandLink {
         command: command.0,
         handler: Box::new(handler),
@@ -601,5 +599,45 @@ pub fn register_command_handler<H: CommandHandler>(
         )
     };
 
-    OwnedCommand { link }
+    CommandHandlerRecord {
+        link,
+        execution_time,
+    }
+}
+
+unsafe extern "C" fn command_handler(
+    command: xplm_sys::XPLMCommandRef,
+    phase: xplm_sys::XPLMCommandPhase,
+    refcon: *mut ::std::os::raw::c_void,
+) -> ::std::os::raw::c_int {
+    const CONTINUE_EXECUTION: ::std::os::raw::c_int = 1;
+    const TERMINATE_EXECUTION: ::std::os::raw::c_int = 1;
+    let link = refcon as *mut OwnedCommandLink;
+    if (*link).command == command {
+        let command = Command(command);
+        let handler = (*link).handler.deref_mut();
+        match phase as ::std::os::raw::c_uint {
+            xplm_sys::xplm_CommandBegin => (*handler).command_begin(command),
+            xplm_sys::xplm_CommandContinue => (*handler).command_continue(command),
+            xplm_sys::xplm_CommandEnd => (*handler).command_end(command),
+            _ => {}
+        };
+        TERMINATE_EXECUTION
+    } else {
+        CONTINUE_EXECUTION
+    }
+}
+
+/// Removes a command callback registered with [`register_command_handler`] API call.
+pub fn unregister_command_handler(record: &mut CommandHandlerRecord) {
+    let link_ptr: *mut OwnedCommandLink = record.link.deref_mut();
+
+    unsafe {
+        xplm_sys::XPLMUnregisterCommandHandler(
+            record.link.command,
+            Some(command_handler),
+            record.execution_time as ::std::os::raw::c_int,
+            link_ptr as *mut ::std::os::raw::c_void,
+        )
+    };
 }
