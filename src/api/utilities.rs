@@ -1,18 +1,16 @@
-use std::{ffi, path, str, string, sync::OnceLock};
+use std::{ffi, path, str, sync::OnceLock};
 
 use thiserror::Error;
-
-use super::ffi::FromStringBuf;
 
 /// An error returned from plugin API calls
 #[derive(Error, Debug)]
 pub enum UtilitiesError {
     /// Invalid system path string passed from X-Plane
     #[error("invalid system path {0}")]
-    InvalidSystemPath(string::FromUtf8Error),
+    InvalidSystemPath(ffi::IntoStringError),
     /// Invalid preferences path string passed from X-Plane
     #[error("invalid preferences path {0}")]
-    InvalidPrefsPath(string::FromUtf8Error),
+    InvalidPrefsPath(ffi::IntoStringError),
     /// Invalid directory separator passed from X-Plane
     #[error("invalid directory separator {0}")]
     InvalidDirectorySeparator(str::Utf8Error),
@@ -38,11 +36,16 @@ pub type Result<T> = std::result::Result<T, UtilitiesError>;
 /// # Returns
 /// Returns system path on success. Otherwise returns [`UtilitiesError::InvalidSystemPath`].
 pub fn get_system_path() -> Result<path::PathBuf> {
-    let mut buf = [0; 4096];
-    unsafe { xplm_sys::XPLMGetSystemPath(buf.as_mut_ptr()) };
-    String::from_string_buf(buf)
-        .map(|path| path::PathBuf::from(&path))
-        .map_err(UtilitiesError::InvalidSystemPath)
+    let path = unsafe {
+        let mut buf = [0; 4096];
+        xplm_sys::XPLMGetSystemPath(buf.as_mut_ptr());
+        ffi::CStr::from_ptr(buf.as_ptr())
+            .to_owned()
+            .into_string()
+            .map_err(UtilitiesError::InvalidPrefsPath)?
+    };
+
+    Ok(path::PathBuf::from(&path))
 }
 
 /// Returns a full path to a file that is within X-Plane’s preferences directory.
@@ -50,11 +53,16 @@ pub fn get_system_path() -> Result<path::PathBuf> {
 /// # Returns
 /// Returns preferences file path on success. Otherwise returns [`UtilitiesError::InvalidPrefsPath`].
 pub fn get_prefs_path() -> Result<path::PathBuf> {
-    let mut buf = [0; 4096];
-    unsafe { xplm_sys::XPLMGetPrefsPath(buf.as_mut_ptr()) };
-    String::from_string_buf(buf)
-        .map(|path| path::PathBuf::from(&path))
-        .map_err(UtilitiesError::InvalidPrefsPath)
+    let path = unsafe {
+        let mut buf = [0; 4096];
+        xplm_sys::XPLMGetPrefsPath(buf.as_mut_ptr());
+        ffi::CStr::from_ptr(buf.as_ptr())
+            .to_owned()
+            .into_string()
+            .map_err(UtilitiesError::InvalidPrefsPath)?
+    };
+
+    Ok(path::PathBuf::from(&path))
 }
 
 /// Returns a char that is the directory separator for the current platform.
@@ -96,8 +104,11 @@ pub fn load_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
         .as_ref()
         .to_str()
         .ok_or(UtilitiesError::LoadDataFileError)?;
-    let c_string = ffi::CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
-    if unsafe { xplm_sys::XPLMLoadDataFile(file_type as i32, c_string.as_ptr()) == 1 } {
+    let file_path_c =
+        ffi::CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
+    let is_loaded =
+        unsafe { xplm_sys::XPLMLoadDataFile(file_type as i32, file_path_c.as_ptr()) == 1 };
+    if is_loaded {
         Ok(())
     } else {
         Err(UtilitiesError::LoadDataFileError)
@@ -109,9 +120,9 @@ pub fn load_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
 /// # Returns
 /// Returns `Ok` in case of success. Otherwise returns [`UtilitiesError::LoadDataFileError`].
 pub fn clear_replay() -> Result<()> {
-    if unsafe {
-        xplm_sys::XPLMLoadDataFile(DataFileType::ReplayMovie as i32, std::ptr::null_mut()) == 1
-    } {
+    let file_type = DataFileType::ReplayMovie as i32;
+    let is_loaded = unsafe { xplm_sys::XPLMLoadDataFile(file_type, std::ptr::null_mut()) == 1 };
+    if is_loaded {
         Ok(())
     } else {
         Err(UtilitiesError::LoadDataFileError)
@@ -133,8 +144,11 @@ pub fn save_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
         .as_ref()
         .to_str()
         .ok_or(UtilitiesError::SaveDataFileError)?;
-    let c_string = ffi::CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
-    if unsafe { xplm_sys::XPLMSaveDataFile(file_type as i32, c_string.as_ptr()) == 1 } {
+    let file_path_c =
+        ffi::CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
+    let is_saved =
+        unsafe { xplm_sys::XPLMSaveDataFile(file_type as i32, file_path_c.as_ptr()) == 1 };
+    if is_saved {
         Ok(())
     } else {
         Err(UtilitiesError::SaveDataFileError)
@@ -201,7 +215,6 @@ pub fn get_versions() -> Versions {
     let mut xplm_version = 0;
     let mut host_id = 0;
     unsafe { xplm_sys::XPLMGetVersions(&mut xplane_version, &mut xplm_version, &mut host_id) };
-
     Versions {
         app_id: HostApplicationId::from(host_id),
         xplane: xplane_version,
