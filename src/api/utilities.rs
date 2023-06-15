@@ -307,3 +307,15 @@ pub fn debug_string<T: Into<String>>(message: T) {
         unsafe { xplm_sys::XPLMDebugString(message_c.as_ptr()) };
     }
 }
+
+/// Displays the string in a translucent overlay over the current display and also speaks the string
+/// if text-to-speech is enabled. The string is spoken asynchronously, this function returns immediately.
+/// This function may not speak or print depending on user preferences.
+///
+/// # Arguments
+/// * `message` - a message that will be spoken.
+pub fn speak_string<T: Into<String>>(message: T) {
+    if let Ok(message_c) = ffi::CString::new(message.into()) {
+        unsafe { xplm_sys::XPLMSpeakString(message_c.as_ptr()) };
+    }
+}
