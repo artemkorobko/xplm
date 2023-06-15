@@ -484,10 +484,17 @@ pub fn find_command<T: Into<String>>(name: T) -> Result<Option<Command>> {
 }
 
 /// Starts the execution of a command.
-/// 
+///
 /// # Arguments
 /// * `command` - the [`Command`] to begin execution of.
 pub fn command_begin(command: &Command) {
     unsafe { xplm_sys::XPLMCommandBegin(command.0) };
 }
 
+/// Ends the execution of a given command that was previously started.
+///
+/// # Arguments
+/// * `command` - the [`Command`] to end execution of.
+pub fn command_end(command: &Command) {
+    unsafe { xplm_sys::XPLMCommandEnd(command.0) };
+}
