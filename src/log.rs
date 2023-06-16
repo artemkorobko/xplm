@@ -8,12 +8,11 @@ pub enum Level {
 macro_rules! log {
     // log!(Level::Info, "a log event")
     ($lvl:expr, $($arg:tt)+) => {{
-        let args = format_args!($($arg)*);
         let module = module_path!();
         let message = match $lvl {
-            $crate::log::Level::Info => format!("[INFO {}] {}\n", module, args),
-            $crate::log::Level::Warn => format!("[WARN {}] {}\n", module, args),
-            $crate::log::Level::Error => format!("[ERROR {}:{}] {}\n", module, line!(), args),
+            $crate::log::Level::Info => format!("[INFO {}] {}\n", module, format_args!($($arg)*)),
+            $crate::log::Level::Warn => format!("[WARN {}] {}\n", module, format_args!($($arg)*)),
+            $crate::log::Level::Error => format!("[ERROR {}:{}] {}\n", module, line!(), format_args!($($arg)*)),
         };
         $crate::api::utilities::debug_string(message);
     }};

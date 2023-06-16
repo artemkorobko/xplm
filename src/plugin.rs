@@ -48,7 +48,10 @@ macro_rules! register_plugin {
                             .set(instance)
                             .map_or(XP_RESULT_ERR, |_| XP_RESULT_OK)
                     }
-                    Err(_err) => XP_RESULT_ERR,
+                    Err(err) => {
+                        xplm::error!("{}", err);
+                        XP_RESULT_ERR
+                    }
                 }
             } else {
                 XP_RESULT_OK
@@ -67,7 +70,12 @@ macro_rules! register_plugin {
         #[allow(non_snake_case)]
         pub unsafe extern "C" fn XPluginEnable() -> ::std::os::raw::c_int {
             if let Some(instance) = PLUGIN_INSTANCE.get_mut() {
-                instance.enable().map_or(XP_RESULT_ERR, |_| XP_RESULT_OK)
+                if let Err(err) = instance.enable() {
+                    xplm::error!("{}", err);
+                    XP_RESULT_ERR
+                } else {
+                    XP_RESULT_OK
+                }
             } else {
                 XP_RESULT_ERR
             }
