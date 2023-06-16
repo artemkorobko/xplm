@@ -5,7 +5,7 @@ use std::{
     sync::OnceLock,
 };
 
-/// An error returned from plugin API calls
+/// An error returned from utilities API calls
 #[derive(thiserror::Error, Debug)]
 pub enum UtilitiesError {
     /// Invalid system path string returned from X-Plane
@@ -38,9 +38,12 @@ pub enum UtilitiesError {
     /// Unknown language code
     #[error("unknown language code {0}")]
     UnknownLanguageCode(xplm_sys::XPLMLanguageCode),
+    /// Invalid virtual key returned from X-Plane
+    #[error("invalid virtual key {0}")]
+    InvalidVirtualKey(::std::os::raw::c_char),
     /// Invalid virtual key description string returned from X-Plane
     #[error("invalid virtual key description {0}")]
-    InvalidVKDescription(ffi::IntoStringError),
+    InvalidVirtualKeyDescription(ffi::IntoStringError),
     /// Invalid command reference
     #[error("invalid command reference")]
     InvalidCommand,
@@ -457,6 +460,127 @@ pub enum VirtualKey {
     NumpadEq = xplm_sys::XPLM_VK_NUMPAD_EQ,
 }
 
+impl TryFrom<::std::os::raw::c_char> for VirtualKey {
+    type Error = UtilitiesError;
+
+    fn try_from(value: ::std::os::raw::c_char) -> std::result::Result<Self, Self::Error> {
+        match value as _ {
+            xplm_sys::XPLM_VK_BACK => Ok(Self::Back),
+            xplm_sys::XPLM_VK_TAB => Ok(Self::Tab),
+            xplm_sys::XPLM_VK_CLEAR => Ok(Self::Clear),
+            xplm_sys::XPLM_VK_RETURN => Ok(Self::Return),
+            xplm_sys::XPLM_VK_ESCAPE => Ok(Self::Escape),
+            xplm_sys::XPLM_VK_SPACE => Ok(Self::Space),
+            xplm_sys::XPLM_VK_PRIOR => Ok(Self::Prior),
+            xplm_sys::XPLM_VK_NEXT => Ok(Self::Next),
+            xplm_sys::XPLM_VK_END => Ok(Self::End),
+            xplm_sys::XPLM_VK_HOME => Ok(Self::Home),
+            xplm_sys::XPLM_VK_LEFT => Ok(Self::Left),
+            xplm_sys::XPLM_VK_UP => Ok(Self::Up),
+            xplm_sys::XPLM_VK_RIGHT => Ok(Self::Right),
+            xplm_sys::XPLM_VK_DOWN => Ok(Self::Down),
+            xplm_sys::XPLM_VK_SELECT => Ok(Self::Select),
+            xplm_sys::XPLM_VK_PRINT => Ok(Self::Print),
+            xplm_sys::XPLM_VK_EXECUTE => Ok(Self::Execute),
+            xplm_sys::XPLM_VK_SNAPSHOT => Ok(Self::Snapshot),
+            xplm_sys::XPLM_VK_INSERT => Ok(Self::Insert),
+            xplm_sys::XPLM_VK_DELETE => Ok(Self::Delete),
+            xplm_sys::XPLM_VK_HELP => Ok(Self::Help),
+            xplm_sys::XPLM_VK_0 => Ok(Self::Zero),
+            xplm_sys::XPLM_VK_1 => Ok(Self::One),
+            xplm_sys::XPLM_VK_2 => Ok(Self::Two),
+            xplm_sys::XPLM_VK_3 => Ok(Self::Three),
+            xplm_sys::XPLM_VK_4 => Ok(Self::Four),
+            xplm_sys::XPLM_VK_5 => Ok(Self::Five),
+            xplm_sys::XPLM_VK_6 => Ok(Self::Six),
+            xplm_sys::XPLM_VK_7 => Ok(Self::Seven),
+            xplm_sys::XPLM_VK_8 => Ok(Self::Eight),
+            xplm_sys::XPLM_VK_9 => Ok(Self::Nine),
+            xplm_sys::XPLM_VK_A => Ok(Self::A),
+            xplm_sys::XPLM_VK_B => Ok(Self::B),
+            xplm_sys::XPLM_VK_C => Ok(Self::C),
+            xplm_sys::XPLM_VK_D => Ok(Self::D),
+            xplm_sys::XPLM_VK_E => Ok(Self::E),
+            xplm_sys::XPLM_VK_F => Ok(Self::F),
+            xplm_sys::XPLM_VK_G => Ok(Self::G),
+            xplm_sys::XPLM_VK_H => Ok(Self::H),
+            xplm_sys::XPLM_VK_I => Ok(Self::I),
+            xplm_sys::XPLM_VK_J => Ok(Self::J),
+            xplm_sys::XPLM_VK_K => Ok(Self::K),
+            xplm_sys::XPLM_VK_L => Ok(Self::L),
+            xplm_sys::XPLM_VK_M => Ok(Self::M),
+            xplm_sys::XPLM_VK_N => Ok(Self::N),
+            xplm_sys::XPLM_VK_O => Ok(Self::O),
+            xplm_sys::XPLM_VK_P => Ok(Self::P),
+            xplm_sys::XPLM_VK_Q => Ok(Self::Q),
+            xplm_sys::XPLM_VK_R => Ok(Self::R),
+            xplm_sys::XPLM_VK_S => Ok(Self::S),
+            xplm_sys::XPLM_VK_T => Ok(Self::T),
+            xplm_sys::XPLM_VK_U => Ok(Self::U),
+            xplm_sys::XPLM_VK_V => Ok(Self::V),
+            xplm_sys::XPLM_VK_W => Ok(Self::W),
+            xplm_sys::XPLM_VK_X => Ok(Self::X),
+            xplm_sys::XPLM_VK_Y => Ok(Self::Y),
+            xplm_sys::XPLM_VK_Z => Ok(Self::Z),
+            xplm_sys::XPLM_VK_NUMPAD0 => Ok(Self::Numpad0),
+            xplm_sys::XPLM_VK_NUMPAD1 => Ok(Self::Numpad1),
+            xplm_sys::XPLM_VK_NUMPAD2 => Ok(Self::Numpad2),
+            xplm_sys::XPLM_VK_NUMPAD3 => Ok(Self::Numpad3),
+            xplm_sys::XPLM_VK_NUMPAD4 => Ok(Self::Numpad4),
+            xplm_sys::XPLM_VK_NUMPAD5 => Ok(Self::Numpad5),
+            xplm_sys::XPLM_VK_NUMPAD6 => Ok(Self::Numpad6),
+            xplm_sys::XPLM_VK_NUMPAD7 => Ok(Self::Numpad7),
+            xplm_sys::XPLM_VK_NUMPAD8 => Ok(Self::Numpad8),
+            xplm_sys::XPLM_VK_NUMPAD9 => Ok(Self::Numpad9),
+            xplm_sys::XPLM_VK_MULTIPLY => Ok(Self::Multiply),
+            xplm_sys::XPLM_VK_ADD => Ok(Self::Add),
+            xplm_sys::XPLM_VK_SEPARATOR => Ok(Self::Separator),
+            xplm_sys::XPLM_VK_SUBTRACT => Ok(Self::Subtract),
+            xplm_sys::XPLM_VK_DECIMAL => Ok(Self::Decimal),
+            xplm_sys::XPLM_VK_DIVIDE => Ok(Self::Divide),
+            xplm_sys::XPLM_VK_F1 => Ok(Self::F1),
+            xplm_sys::XPLM_VK_F2 => Ok(Self::F2),
+            xplm_sys::XPLM_VK_F3 => Ok(Self::F3),
+            xplm_sys::XPLM_VK_F4 => Ok(Self::F4),
+            xplm_sys::XPLM_VK_F5 => Ok(Self::F5),
+            xplm_sys::XPLM_VK_F6 => Ok(Self::F6),
+            xplm_sys::XPLM_VK_F7 => Ok(Self::F7),
+            xplm_sys::XPLM_VK_F8 => Ok(Self::F8),
+            xplm_sys::XPLM_VK_F9 => Ok(Self::F9),
+            xplm_sys::XPLM_VK_F10 => Ok(Self::F10),
+            xplm_sys::XPLM_VK_F11 => Ok(Self::F11),
+            xplm_sys::XPLM_VK_F12 => Ok(Self::F12),
+            xplm_sys::XPLM_VK_F13 => Ok(Self::F13),
+            xplm_sys::XPLM_VK_F14 => Ok(Self::F14),
+            xplm_sys::XPLM_VK_F15 => Ok(Self::F15),
+            xplm_sys::XPLM_VK_F16 => Ok(Self::F16),
+            xplm_sys::XPLM_VK_F17 => Ok(Self::F17),
+            xplm_sys::XPLM_VK_F18 => Ok(Self::F18),
+            xplm_sys::XPLM_VK_F19 => Ok(Self::F19),
+            xplm_sys::XPLM_VK_F20 => Ok(Self::F20),
+            xplm_sys::XPLM_VK_F21 => Ok(Self::F21),
+            xplm_sys::XPLM_VK_F22 => Ok(Self::F22),
+            xplm_sys::XPLM_VK_F23 => Ok(Self::F23),
+            xplm_sys::XPLM_VK_F24 => Ok(Self::F24),
+            xplm_sys::XPLM_VK_EQUAL => Ok(Self::Equal),
+            xplm_sys::XPLM_VK_MINUS => Ok(Self::Minus),
+            xplm_sys::XPLM_VK_RBRACE => Ok(Self::RBrace),
+            xplm_sys::XPLM_VK_LBRACE => Ok(Self::LBrace),
+            xplm_sys::XPLM_VK_QUOTE => Ok(Self::Quote),
+            xplm_sys::XPLM_VK_SEMICOLON => Ok(Self::Semicolon),
+            xplm_sys::XPLM_VK_BACKSLASH => Ok(Self::Backslash),
+            xplm_sys::XPLM_VK_COMMA => Ok(Self::Comma),
+            xplm_sys::XPLM_VK_SLASH => Ok(Self::Slash),
+            xplm_sys::XPLM_VK_PERIOD => Ok(Self::Period),
+            xplm_sys::XPLM_VK_BACKQUOTE => Ok(Self::Backquote),
+            xplm_sys::XPLM_VK_ENTER => Ok(Self::Enter),
+            xplm_sys::XPLM_VK_NUMPAD_ENT => Ok(Self::NumpadEnter),
+            xplm_sys::XPLM_VK_NUMPAD_EQ => Ok(Self::NumpadEq),
+            _ => Err(Self::Error::InvalidVirtualKey(value)),
+        }
+    }
+}
+
 /// Returns a human-readable string describing the character.
 ///
 /// # Arguments
@@ -474,7 +598,7 @@ pub fn get_virtual_key_description(key: VirtualKey) -> Result<Option<String>> {
                 .map(Some)
         }
     }
-    .map_err(UtilitiesError::InvalidVKDescription)
+    .map_err(UtilitiesError::InvalidVirtualKeyDescription)
 }
 
 /// Reloads the current set of scenery.
@@ -570,6 +694,7 @@ where
     Command::try_from(command)
 }
 
+/// Command handler.
 pub trait CommandHandler: 'static {
     /// Called when the command begins (corresponds to a button being pressed down)
     fn command_begin(&mut self);
@@ -580,14 +705,14 @@ pub trait CommandHandler: 'static {
 }
 
 /// A link to [`CommandHandler`] for a given [`Command`].
-pub struct OwnedCommandLink {
+pub struct CommandLink {
     command: xplm_sys::XPLMCommandRef,
     handler: Box<dyn CommandHandler>,
 }
 
 /// A command handler record to keep a registration alive.
 pub struct CommandHandlerRecord {
-    link: Box<OwnedCommandLink>,
+    link: Box<CommandLink>,
     execution_time: CommandExecutionTime,
 }
 
@@ -621,19 +746,19 @@ pub fn register_command_handler<H: CommandHandler>(
     execution_time: CommandExecutionTime,
     handler: H,
 ) -> CommandHandlerRecord {
-    let mut link = Box::new(OwnedCommandLink {
+    let mut link = Box::new(CommandLink {
         command: command.0,
         handler: Box::new(handler),
     });
 
-    let link_ptr: *mut OwnedCommandLink = link.deref_mut();
+    let link_ptr: *mut CommandLink = link.deref_mut();
 
     unsafe {
         xplm_sys::XPLMRegisterCommandHandler(
             command.0,
             Some(command_handler),
-            execution_time as ::std::os::raw::c_int,
-            link_ptr as *mut ::std::os::raw::c_void,
+            execution_time as _,
+            link_ptr as *mut _,
         )
     };
 
@@ -650,7 +775,7 @@ unsafe extern "C" fn command_handler(
 ) -> ::std::os::raw::c_int {
     const CONTINUE_EXECUTION: ::std::os::raw::c_int = 1;
     const TERMINATE_EXECUTION: ::std::os::raw::c_int = 1;
-    let link = refcon as *mut OwnedCommandLink;
+    let link = refcon as *mut CommandLink;
     if (*link).command == command {
         let handler = (*link).handler.deref_mut();
         match phase as ::std::os::raw::c_uint {
@@ -667,7 +792,7 @@ unsafe extern "C" fn command_handler(
 
 /// Removes a command callback registered with [`register_command_handler`] API call.
 pub fn unregister_command_handler(record: &mut CommandHandlerRecord) {
-    let link_ptr: *mut OwnedCommandLink = record.link.deref_mut();
+    let link_ptr: *mut CommandLink = record.link.deref_mut();
 
     unsafe {
         xplm_sys::XPLMUnregisterCommandHandler(

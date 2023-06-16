@@ -16,6 +16,9 @@ supports X-Plane version defined in this library.
     - [ ] Plugin Features API. `XPLMEnumerateFeatures` is not yet implemented.
 - [X] [XPLMMenus](https://developer.x-plane.com/sdk/XPLMMenus)
 - [ ] [XPLMDisplay](https://developer.x-plane.com/sdk/XPLMDisplay)
+    - [ ] Drawing callbacks.
+    - [ ] Avionics API.
+    - [ ] Window API.
 - [X] [XPLMUtilities](https://developer.x-plane.com/sdk/XPLMUtilities)
     - [X] Full and Relative Paths.  
     - [X] X-Plane Misc except `XPLMFindSymbol`.  
