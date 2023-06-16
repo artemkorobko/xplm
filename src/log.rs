@@ -15,7 +15,7 @@ macro_rules! log {
             $crate::log::Level::Error => "ERROR",
         };
 
-        let message = format!("{}: {}", level, args);
+        let message = format!("{}: {}\n", level, args);
         $crate::api::utilities::debug_string(message);
     }};
 }
