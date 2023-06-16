@@ -287,7 +287,7 @@ pub fn set_error_callback(callback: fn(&str)) {
                     handler(message_str)
                 }
             }
-            Err(_) => debug_string("Error handler called with an invalid message"),
+            Err(_) => crate::error!("Error handler called with an invalid message"),
         }
     }
 
