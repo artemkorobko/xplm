@@ -1,9 +1,7 @@
 use std::ffi;
 
-use thiserror::Error;
-
 /// An error returned from plugin API calls
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum PluginError {
     /// Invalid plugin ID
     #[error("invalid plugin id: {0}")]
@@ -238,9 +236,12 @@ pub fn send_message_to_plugin<P: AsMessageParam>(id: &PluginId, message: i32, pa
 /// # Arguments
 /// * `message` - the unique message identifier.
 pub fn send_message_to_all_plugins<P: AsMessageParam>(message: i32, param: P) {
-    const XPLM_NO_PLUGIN_ID: i32 = -1;
     unsafe {
-        xplm_sys::XPLMSendMessageToPlugin(XPLM_NO_PLUGIN_ID, message, param.as_message_param())
+        xplm_sys::XPLMSendMessageToPlugin(
+            xplm_sys::XPLM_NO_PLUGIN_ID,
+            message,
+            param.as_message_param(),
+        )
     };
 }
 
@@ -306,8 +307,7 @@ pub fn is_feature_enabled(feature: Feature) -> bool {
 /// and plugin in some way, depending on the feature.
 pub fn enable_feature(feature: Feature) {
     if let Ok(name) = ffi::CString::new(feature.name()) {
-        const ENABLE: i32 = 1;
-        unsafe { xplm_sys::XPLMEnableFeature(name.as_ptr(), ENABLE) };
+        unsafe { xplm_sys::XPLMEnableFeature(name.as_ptr(), 1) };
     }
 }
 
@@ -315,7 +315,6 @@ pub fn enable_feature(feature: Feature) {
 /// and plugin in some way, depending on the feature.
 pub fn disable_feature(feature: Feature) {
     if let Ok(name) = ffi::CString::new(feature.name()) {
-        const DISABLE: i32 = 0;
-        unsafe { xplm_sys::XPLMEnableFeature(name.as_ptr(), DISABLE) };
+        unsafe { xplm_sys::XPLMEnableFeature(name.as_ptr(), 0) };
     }
 }

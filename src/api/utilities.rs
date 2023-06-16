@@ -5,10 +5,8 @@ use std::{
     sync::OnceLock,
 };
 
-use thiserror::Error;
-
 /// An error returned from plugin API calls
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum UtilitiesError {
     /// Invalid system path string returned from X-Plane
     #[error("invalid system path {0}")]
@@ -27,13 +25,25 @@ pub enum UtilitiesError {
     InvalidDataFilePath(ffi::NulError),
     /// Unable to load data file
     #[error("unable to load data file")]
-    LoadDataFileError,
+    LoadDataFile,
+    /// Unable to load data file
+    #[error("unable to clear replay")]
+    ClearReplay,
     /// Unable to save data file
     #[error("unable to save data file")]
-    SaveDataFileError,
+    SaveDataFile,
+    /// Unknown host application id
+    #[error("unknown host application id {0}")]
+    UnknownHostApplicationId(xplm_sys::XPLMHostApplicationID),
+    /// Unknown language code
+    #[error("unknown language code {0}")]
+    UnknownLanguageCode(xplm_sys::XPLMLanguageCode),
     /// Invalid virtual key description string returned from X-Plane
     #[error("invalid virtual key description {0}")]
     InvalidVKDescription(ffi::IntoStringError),
+    /// Invalid command reference
+    #[error("invalid command reference")]
+    InvalidCommand,
     /// Invalid command name string passed to X-Plane
     #[error("invalid command name {0}")]
     InvalidCommandName(ffi::NulError),
@@ -105,13 +115,13 @@ pub enum DataFileType {
 ///
 /// # Returns
 /// Returns `Ok` in case of success. Otherwise returns
-/// * [`UtilitiesError::LoadDataFileError`] if data file can't be loaded.
+/// * [`UtilitiesError::LoadDataFile`] if data file can't be loaded.
 /// * [`UtilitiesError::InvalidDataFilePath`] if file_path contains invalid characters.
 pub fn load_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: P) -> Result<()> {
     let file_path_str = file_path
         .as_ref()
         .to_str()
-        .ok_or(UtilitiesError::LoadDataFileError)?;
+        .ok_or(UtilitiesError::LoadDataFile)?;
     let file_path_c =
         ffi::CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
     let is_loaded = unsafe {
@@ -124,14 +134,14 @@ pub fn load_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
     if is_loaded == 1 {
         Ok(())
     } else {
-        Err(UtilitiesError::LoadDataFileError)
+        Err(UtilitiesError::LoadDataFile)
     }
 }
 
 /// Clears the replay. This is only valid with replay movies, not sit files.
 ///
 /// # Returns
-/// Returns `Ok` in case of success. Otherwise returns [`UtilitiesError::LoadDataFileError`].
+/// Returns `Ok` in case of success. Otherwise returns [`UtilitiesError::ClearReplay`].
 pub fn clear_replay() -> Result<()> {
     let is_loaded = unsafe {
         xplm_sys::XPLMLoadDataFile(
@@ -143,7 +153,7 @@ pub fn clear_replay() -> Result<()> {
     if is_loaded == 1 {
         Ok(())
     } else {
-        Err(UtilitiesError::LoadDataFileError)
+        Err(UtilitiesError::ClearReplay)
     }
 }
 
@@ -155,13 +165,13 @@ pub fn clear_replay() -> Result<()> {
 ///
 /// # Returns
 /// Returns `Ok` in case of success. Otherwise returns
-/// * [`UtilitiesError::SaveDataFileError`] if data file can't be loaded.
+/// * [`UtilitiesError::SaveDataFile`] if data file can't be loaded.
 /// * [`UtilitiesError::InvalidDataFilePath`] if file_path contains invalid characters.
 pub fn save_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: P) -> Result<()> {
     let file_path_str = file_path
         .as_ref()
         .to_str()
-        .ok_or(UtilitiesError::SaveDataFileError)?;
+        .ok_or(UtilitiesError::SaveDataFile)?;
     let file_path_c =
         ffi::CString::new(file_path_str).map_err(UtilitiesError::InvalidDataFilePath)?;
     let is_saved = unsafe {
@@ -174,7 +184,7 @@ pub fn save_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
     if is_saved == 1 {
         Ok(())
     } else {
-        Err(UtilitiesError::SaveDataFileError)
+        Err(UtilitiesError::SaveDataFile)
     }
 }
 
@@ -188,12 +198,14 @@ pub enum HostApplicationId {
     XPlane,
 }
 
-impl From<xplm_sys::XPLMHostApplicationID> for HostApplicationId {
-    fn from(value: xplm_sys::XPLMHostApplicationID) -> Self {
+impl TryFrom<xplm_sys::XPLMHostApplicationID> for HostApplicationId {
+    type Error = UtilitiesError;
+
+    fn try_from(value: xplm_sys::XPLMHostApplicationID) -> std::result::Result<Self, Self::Error> {
         match value as ::std::os::raw::c_uint {
-            xplm_sys::xplm_Host_Unknown => Self::Unknown,
-            xplm_sys::xplm_Host_XPlane => Self::XPlane,
-            _ => Self::Unknown,
+            xplm_sys::xplm_Host_Unknown => Ok(Self::Unknown),
+            xplm_sys::xplm_Host_XPlane => Ok(Self::XPlane),
+            _ => Err(Self::Error::UnknownHostApplicationId(value)),
         }
     }
 }
@@ -212,17 +224,17 @@ pub struct Versions {
 /// In addition returns the host ID of the app running the plugin.
 ///
 /// # Returns
-/// Returns [`Versions`].
-pub fn get_versions() -> Versions {
+/// Returns [`Versions`] on success. Otherwise returns [`UtilitiesError`].
+pub fn get_versions() -> Result<Versions> {
     let mut xplane_version = 0;
     let mut xplm_version = 0;
     let mut host_id = 0;
     unsafe { xplm_sys::XPLMGetVersions(&mut xplane_version, &mut xplm_version, &mut host_id) };
-    Versions {
-        app_id: HostApplicationId::from(host_id),
+    Ok(Versions {
+        app_id: HostApplicationId::try_from(host_id)?,
         xplane: xplane_version,
         xplm: xplm_version,
-    }
+    })
 }
 
 /// Defines what language the sim is running in.
@@ -240,28 +252,34 @@ pub enum Language {
     Chinese,
 }
 
-impl From<xplm_sys::XPLMLanguageCode> for Language {
-    fn from(value: xplm_sys::XPLMLanguageCode) -> Self {
+impl TryFrom<xplm_sys::XPLMLanguageCode> for Language {
+    type Error = UtilitiesError;
+
+    fn try_from(value: xplm_sys::XPLMLanguageCode) -> std::result::Result<Self, Self::Error> {
         match value as ::std::os::raw::c_uint {
-            xplm_sys::xplm_Language_Unknown => Self::Unknown,
-            xplm_sys::xplm_Language_English => Self::English,
-            xplm_sys::xplm_Language_French => Self::French,
-            xplm_sys::xplm_Language_German => Self::German,
-            xplm_sys::xplm_Language_Italian => Self::Italian,
-            xplm_sys::xplm_Language_Spanish => Self::Spanish,
-            xplm_sys::xplm_Language_Korean => Self::Korean,
-            xplm_sys::xplm_Language_Russian => Self::Russian,
-            xplm_sys::xplm_Language_Greek => Self::Greek,
-            xplm_sys::xplm_Language_Japanese => Self::Japanese,
-            xplm_sys::xplm_Language_Chinese => Self::Chinese,
-            _ => Self::Unknown,
+            xplm_sys::xplm_Language_Unknown => Ok(Self::Unknown),
+            xplm_sys::xplm_Language_English => Ok(Self::English),
+            xplm_sys::xplm_Language_French => Ok(Self::French),
+            xplm_sys::xplm_Language_German => Ok(Self::German),
+            xplm_sys::xplm_Language_Italian => Ok(Self::Italian),
+            xplm_sys::xplm_Language_Spanish => Ok(Self::Spanish),
+            xplm_sys::xplm_Language_Korean => Ok(Self::Korean),
+            xplm_sys::xplm_Language_Russian => Ok(Self::Russian),
+            xplm_sys::xplm_Language_Greek => Ok(Self::Greek),
+            xplm_sys::xplm_Language_Japanese => Ok(Self::Japanese),
+            xplm_sys::xplm_Language_Chinese => Ok(Self::Chinese),
+            _ => Err(Self::Error::UnknownLanguageCode(value)),
         }
     }
 }
 
 /// Returns the [`Language`] the sim is running in.
-pub fn get_language() -> Language {
-    unsafe { xplm_sys::XPLMGetLanguage() }.into()
+///
+/// # Returns
+/// Returns [`Language`] on success. Otherwise returns [`UtilitiesError::UnknownLanguageCode`].
+pub fn get_language() -> Result<Language> {
+    let code = unsafe { xplm_sys::XPLMGetLanguage() };
+    Language::try_from(code)
 }
 
 static ERROR_CALLBACK: OnceLock<fn(&str)> = OnceLock::new();
@@ -292,7 +310,7 @@ pub fn set_error_callback(callback: fn(&str)) {
                     handler(message_str)
                 }
             }
-            Err(_) => crate::error!("Error handler called with an invalid message"),
+            Err(err) => crate::error!("Error handler called with an invalid message. {}", err),
         }
     }
 
@@ -467,6 +485,18 @@ pub fn reload_scenery() {
 /// An opaque identifier for an X-Plane command
 pub struct Command(xplm_sys::XPLMCommandRef);
 
+impl TryFrom<xplm_sys::XPLMCommandRef> for Command {
+    type Error = UtilitiesError;
+
+    fn try_from(value: xplm_sys::XPLMCommandRef) -> std::result::Result<Self, Self::Error> {
+        if value.is_null() {
+            Err(Self::Error::InvalidCommand)
+        } else {
+            Ok(Command(value))
+        }
+    }
+}
+
 impl Deref for Command {
     type Target = xplm_sys::XPLMCommandRef;
 
@@ -490,7 +520,7 @@ pub fn find_command<T: Into<String>>(name: T) -> Result<Option<Command>> {
     if command.is_null() {
         Ok(None)
     } else {
-        Ok(Some(Command(command)))
+        Ok(Command::try_from(command).ok())
     }
 }
 
@@ -525,11 +555,10 @@ pub fn command_once(command: &Command) {
 /// * `description` - a command description.
 ///
 /// # Returns
-/// Returns [`Command`] in case of success or existance.
-/// - None in case of creation failure.
+/// Returns [`Command`] in case of success.
 /// - [`UtilitiesError::InvalidCommandName`] in case of malformed name argument.
 /// - [`UtilitiesError::InvalidCommandDescription`] in case of malformed description argument.
-pub fn create_command<N, D>(name: N, description: D) -> Result<Option<Command>>
+pub fn create_command<N, D>(name: N, description: D) -> Result<Command>
 where
     N: Into<String>,
     D: Into<String>,
@@ -538,11 +567,7 @@ where
     let description_c =
         ffi::CString::new(description.into()).map_err(UtilitiesError::InvalidCommandDescription)?;
     let command = unsafe { xplm_sys::XPLMCreateCommand(name_c.as_ptr(), description_c.as_ptr()) };
-    if command.is_null() {
-        Ok(None)
-    } else {
-        Ok(Some(Command(command)))
-    }
+    Command::try_from(command)
 }
 
 pub trait CommandHandler: 'static {

@@ -14,7 +14,8 @@ supports X-Plane version defined in this library.
     - [X] Enable/Disable plugins.
     - [X] Interplugin Messagging.
     - [ ] Plugin Features API. `XPLMEnumerateFeatures` is not yet implemented.
-- [ ] [XPLMMenus](https://developer.x-plane.com/sdk/XPLMMenus)
+- [X] [XPLMMenus](https://developer.x-plane.com/sdk/XPLMMenus)
+- [ ] [XPLMDisplay](https://developer.x-plane.com/sdk/XPLMDisplay)
 - [X] [XPLMUtilities](https://developer.x-plane.com/sdk/XPLMUtilities)
     - [X] Full and Relative Paths.  
     - [X] X-Plane Misc except `XPLMFindSymbol`.  

@@ -1,21 +1,22 @@
 use std::{ffi, ops::Deref};
 
-use thiserror::Error;
-
 use super::utilities::Command;
 
-/// An error returned from plugin API calls
-#[derive(Error, Debug)]
+/// An error returned from menu API calls
+#[derive(thiserror::Error, Debug)]
 pub enum MenusError {
     /// Invalid menu ID
     #[error("invalid menu id")]
-    InvalidId(xplm_sys::XPLMMenuID),
-    /// Can't create menu
-    #[error("can't create menu")]
-    CreateError,
+    InvalidId,
+    /// Invalid menu item ID
+    #[error("invalid menu item id")]
+    InvalidMenuItemId,
     /// Invalid menu name string passed to X-Plane
     #[error("invalid menu name {0}")]
     InvalidMenuName(ffi::NulError),
+    /// Unknown menu item state
+    #[error("unknown menu item state {0}")]
+    UnknownMenuItemState(xplm_sys::XPLMMenuCheck),
 }
 
 pub type Result<T> = std::result::Result<T, MenusError>;
@@ -28,15 +29,27 @@ impl TryFrom<xplm_sys::XPLMMenuID> for MenuId {
 
     fn try_from(value: xplm_sys::XPLMMenuID) -> Result<Self> {
         if value.is_null() {
-            Err(Self::Error::InvalidId(value))
+            Err(Self::Error::InvalidId)
         } else {
-            Ok(MenuId(value))
+            Ok(Self(value))
         }
     }
 }
 
-/// Menu item.
-pub struct MenuItem(::std::os::raw::c_int);
+/// Menu item identifier.
+pub struct MenuItemId(::std::os::raw::c_int);
+
+impl TryFrom<::std::os::raw::c_int> for MenuItemId {
+    type Error = MenusError;
+
+    fn try_from(value: ::std::os::raw::c_int) -> std::result::Result<Self, Self::Error> {
+        if value < 0 {
+            Err(Self::Error::InvalidMenuItemId)
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
 
 /// Returns the ID of the plug-ins menu, which is created for you at startup.
 ///
@@ -70,7 +83,7 @@ pub fn find_aircraft_menu() -> Result<MenuId> {
 /// [`MenusError::CreateError`] in case the menu can't be created.
 pub fn create_menu<T: Into<String>>(name: T) -> Result<MenuId> {
     let name_c = ffi::CString::new(name.into()).map_err(MenusError::InvalidMenuName)?;
-    let menu_id = unsafe {
+    let id = unsafe {
         xplm_sys::XPLMCreateMenu(
             name_c.as_ptr(),
             std::ptr::null_mut(),
@@ -80,11 +93,7 @@ pub fn create_menu<T: Into<String>>(name: T) -> Result<MenuId> {
         )
     };
 
-    if menu_id.is_null() {
-        Err(MenusError::CreateError)
-    } else {
-        Ok(MenuId(menu_id))
-    }
+    MenuId::try_from(id)
 }
 
 /// Creates a new sub-menu and returns its ID.
@@ -95,7 +104,7 @@ pub fn create_menu<T: Into<String>>(name: T) -> Result<MenuId> {
 ///
 /// # Returns
 /// Returns a [`MenuId`] on success. Otherwise returns [`MenusError::CreateError`].
-pub fn create_sub_menu(parent_menu: &MenuId, parent_item: &MenuItem) -> Result<MenuId> {
+pub fn create_sub_menu(parent_menu: &MenuId, parent_item: &MenuItemId) -> Result<MenuId> {
     unsafe extern "C" fn menu_handler(
         _menu_ref: *mut ::std::os::raw::c_void,
         _item_ref: *mut ::std::os::raw::c_void,
@@ -104,7 +113,7 @@ pub fn create_sub_menu(parent_menu: &MenuId, parent_item: &MenuItem) -> Result<M
         // (*item).handle_click();
     }
 
-    let menu_id = unsafe {
+    let id = unsafe {
         xplm_sys::XPLMCreateMenu(
             std::ptr::null_mut(),
             parent_menu.0,
@@ -114,11 +123,7 @@ pub fn create_sub_menu(parent_menu: &MenuId, parent_item: &MenuItem) -> Result<M
         )
     };
 
-    if menu_id.is_null() {
-        Err(MenusError::CreateError)
-    } else {
-        Ok(MenuId(menu_id))
-    }
+    MenuId::try_from(id)
 }
 
 /// This function destroys a menu that you have created. Use this to remove a submenu if necessary.
@@ -143,11 +148,11 @@ pub fn clear_all_menu_items(id: &MenuId) {
 /// # Arguments
 /// * `parent` - parent menu to add item to.
 /// * `text` - a menu text.
-pub fn append_menu_item<T: Into<String>>(parent: &MenuId, text: T) -> Result<MenuItem> {
+pub fn append_menu_item<T: Into<String>>(parent: &MenuId, text: T) -> Result<MenuItemId> {
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
-    let item =
+    let id =
         unsafe { xplm_sys::XPLMAppendMenuItem(parent.0, text_c.as_ptr(), std::ptr::null_mut(), 0) };
-    Ok(MenuItem(item))
+    MenuItemId::try_from(id)
 }
 
 /// Appends a new menu item to the bottom of a menu and returns its index but instead of the new menu
@@ -161,12 +166,12 @@ pub fn append_menu_item_with_command<T: Into<String>>(
     parent: &MenuId,
     text: T,
     command: &Command,
-) -> Result<MenuItem> {
+) -> Result<MenuItemId> {
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
-    let item = unsafe {
+    let id = unsafe {
         xplm_sys::XPLMAppendMenuItemWithCommand(parent.0, text_c.as_ptr(), *command.deref())
     };
-    Ok(MenuItem(item))
+    MenuItemId::try_from(id)
 }
 
 /// Adds a separator to the end of a menu.
@@ -185,7 +190,7 @@ pub fn append_menu_separator(parent: &MenuId) {
 /// * `text` - new menu item text.
 pub fn set_menu_item_name<T: Into<String>>(
     parent: &MenuId,
-    item: &MenuItem,
+    item: &MenuItemId,
     text: T,
 ) -> Result<()> {
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
@@ -198,7 +203,7 @@ pub fn set_menu_item_name<T: Into<String>>(
 /// # Arguments
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
-pub fn check_menu_item(parent: &MenuId, item: &MenuItem) {
+pub fn check_menu_item(parent: &MenuId, item: &MenuItemId) {
     unsafe { xplm_sys::XPLMCheckMenuItem(parent.0, item.0, xplm_sys::xplm_Menu_Checked as i32) };
 }
 
@@ -207,7 +212,7 @@ pub fn check_menu_item(parent: &MenuId, item: &MenuItem) {
 /// # Arguments
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
-pub fn uncheck_menu_item(parent: &MenuId, item: &MenuItem) {
+pub fn uncheck_menu_item(parent: &MenuId, item: &MenuItemId) {
     unsafe { xplm_sys::XPLMCheckMenuItem(parent.0, item.0, xplm_sys::xplm_Menu_Unchecked as i32) };
 }
 
@@ -221,13 +226,15 @@ pub enum MenuItemState {
     NoCheck,
 }
 
-impl From<xplm_sys::XPLMMenuCheck> for MenuItemState {
-    fn from(value: xplm_sys::XPLMMenuCheck) -> Self {
+impl TryFrom<xplm_sys::XPLMMenuCheck> for MenuItemState {
+    type Error = MenusError;
+
+    fn try_from(value: xplm_sys::XPLMMenuCheck) -> std::result::Result<Self, Self::Error> {
         match value {
-            0 => MenuItemState::NoCheck,
-            1 => MenuItemState::Unchecked,
-            2 => MenuItemState::Checked,
-            _ => MenuItemState::NoCheck,
+            0 => Ok(MenuItemState::NoCheck),
+            1 => Ok(MenuItemState::Unchecked),
+            2 => Ok(MenuItemState::Checked),
+            _ => Err(Self::Error::UnknownMenuItemState(value)),
         }
     }
 }
@@ -237,10 +244,10 @@ impl From<xplm_sys::XPLMMenuCheck> for MenuItemState {
 /// # Arguments
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
-pub fn check_menu_item_state(parent: &MenuId, item: &MenuItem) -> MenuItemState {
+pub fn check_menu_item_state(parent: &MenuId, item: &MenuItemId) -> Result<MenuItemState> {
     let mut state = 0;
     unsafe { xplm_sys::XPLMCheckMenuItemState(parent.0, item.0, &mut state) };
-    MenuItemState::from(state)
+    MenuItemState::try_from(state)
 }
 
 /// Enables a menu item.
@@ -248,7 +255,7 @@ pub fn check_menu_item_state(parent: &MenuId, item: &MenuItem) -> MenuItemState 
 /// # Arguments
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
-pub fn enable_menu_item(parent: &MenuId, item: &MenuItem) {
+pub fn enable_menu_item(parent: &MenuId, item: &MenuItemId) {
     unsafe { xplm_sys::XPLMEnableMenuItem(parent.0, item.0, 1) };
 }
 
@@ -257,7 +264,7 @@ pub fn enable_menu_item(parent: &MenuId, item: &MenuItem) {
 /// # Arguments
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
-pub fn disable_menu_item(parent: &MenuId, item: &MenuItem) {
+pub fn disable_menu_item(parent: &MenuId, item: &MenuItemId) {
     unsafe { xplm_sys::XPLMEnableMenuItem(parent.0, item.0, 0) };
 }
 
@@ -266,6 +273,6 @@ pub fn disable_menu_item(parent: &MenuId, item: &MenuItem) {
 /// # Arguments
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
-pub fn remove_menu_item(parent: &MenuId, item: &MenuItem) {
+pub fn remove_menu_item(parent: &MenuId, item: &MenuItemId) {
     unsafe { xplm_sys::XPLMRemoveMenuItem(parent.0, item.0) };
 }
