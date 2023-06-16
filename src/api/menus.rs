@@ -55,22 +55,43 @@ pub fn find_aircraft_menu() -> Result<MenuId, MenusError> {
     MenuId::try_from(id)
 }
 
-/// Creates a new sub-menu and returns its ID.
+/// Creates a top level menu and returns its ID.
 ///
 /// # Arguments
 /// * `name` - menu name.
-/// * `parent_menu` - parent menu to attach sub-menu to.
-/// * `parent_item` - a menu item.
 ///
 /// # Returns
 /// Returns a [`MenuId`] on success. Otherwise returns:
 /// [`MenusError::InvalidMenuName`] in case manu name contains invalid characters.
 /// [`MenusError::CreateError`] in case the menu can't be created.
-pub fn create_menu(
-    name: &str,
-    parent_menu: &MenuId,
-    parent_item: &MenuItem,
-) -> Result<MenuId, MenusError> {
+pub fn create_menu<T: Into<String>>(name: T) -> Result<MenuId, MenusError> {
+    let name_c = ffi::CString::new(name.into()).map_err(MenusError::InvalidMenuName)?;
+    let menu_id = unsafe {
+        xplm_sys::XPLMCreateMenu(
+            name_c.as_ptr(),
+            std::ptr::null_mut(),
+            0,
+            None,
+            std::ptr::null_mut(),
+        )
+    };
+
+    if menu_id.is_null() {
+        Err(MenusError::CreateError)
+    } else {
+        Ok(MenuId(menu_id))
+    }
+}
+
+/// Creates a new sub-menu and returns its ID.
+///
+/// # Arguments
+/// * `parent_menu` - parent menu to attach sub-menu to.
+/// * `parent_item` - a menu item.
+///
+/// # Returns
+/// Returns a [`MenuId`] on success. Otherwise returns [`MenusError::CreateError`].
+pub fn create_sub_menu(parent_menu: &MenuId, parent_item: &MenuItem) -> Result<MenuId, MenusError> {
     unsafe extern "C" fn menu_handler(
         _menu_ref: *mut ::std::os::raw::c_void,
         _item_ref: *mut ::std::os::raw::c_void,
@@ -79,10 +100,9 @@ pub fn create_menu(
         // (*item).handle_click();
     }
 
-    let name_c = ffi::CString::new(name).map_err(MenusError::InvalidMenuName)?;
     let menu_id = unsafe {
         xplm_sys::XPLMCreateMenu(
-            name_c.as_ptr(),
+            std::ptr::null_mut(),
             parent_menu.0,
             parent_item.0,
             Some(menu_handler),
