@@ -465,7 +465,6 @@ pub fn reload_scenery() {
 }
 
 /// An opaque identifier for an X-Plane command
-#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Command(xplm_sys::XPLMCommandRef);
 
 impl Deref for Command {
@@ -548,11 +547,11 @@ where
 
 pub trait CommandHandler: 'static {
     /// Called when the command begins (corresponds to a button being pressed down)
-    fn command_begin(&mut self, command: Command);
+    fn command_begin(&mut self);
     /// Called frequently while the command button is held down
-    fn command_continue(&mut self, command: Command);
+    fn command_continue(&mut self);
     /// Called when the command ends (corresponds to a button being released)
-    fn command_end(&mut self, command: Command);
+    fn command_end(&mut self);
 }
 
 /// A link to [`CommandHandler`] for a given [`Command`].
@@ -628,12 +627,11 @@ unsafe extern "C" fn command_handler(
     const TERMINATE_EXECUTION: ::std::os::raw::c_int = 1;
     let link = refcon as *mut OwnedCommandLink;
     if (*link).command == command {
-        let command = Command(command);
         let handler = (*link).handler.deref_mut();
         match phase as ::std::os::raw::c_uint {
-            xplm_sys::xplm_CommandBegin => (*handler).command_begin(command),
-            xplm_sys::xplm_CommandContinue => (*handler).command_continue(command),
-            xplm_sys::xplm_CommandEnd => (*handler).command_end(command),
+            xplm_sys::xplm_CommandBegin => (*handler).command_begin(),
+            xplm_sys::xplm_CommandContinue => (*handler).command_continue(),
+            xplm_sys::xplm_CommandEnd => (*handler).command_end(),
             _ => {}
         };
         TERMINATE_EXECUTION
