@@ -260,3 +260,12 @@ pub fn enable_menu_item(parent: &MenuId, item: &MenuItem) {
 pub fn disable_menu_item(parent: &MenuId, item: &MenuItem) {
     unsafe { xplm_sys::XPLMEnableMenuItem(parent.0, item.0, 0) };
 }
+
+/// Removes a menu item from a menu.
+///
+/// # Arguments
+/// * `parent` - a parent menu id which contains an item.
+/// * `item` - a menu item to update.
+pub fn remove_menu_item(parent: &MenuId, item: &MenuItem) {
+    unsafe { xplm_sys::XPLMRemoveMenuItem(parent.0, item.0) };
+}
