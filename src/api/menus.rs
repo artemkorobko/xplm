@@ -176,3 +176,19 @@ pub fn append_menu_item_with_command<T: Into<String>>(
 pub fn append_menu_separator(parent: &MenuId) {
     unsafe { xplm_sys::XPLMAppendMenuSeparator(parent.0) };
 }
+
+/// Changes the name of an existing menu item.
+///
+/// # Arguments
+/// * `parent` - a parent menu id which contains an item.
+/// * `item` - a menu item to update.
+/// * `text` - new menu item text.
+pub fn set_menu_item_name<T: Into<String>>(
+    parent: &MenuId,
+    item: &MenuItem,
+    text: T,
+) -> Result<()> {
+    let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
+    unsafe { xplm_sys::XPLMSetMenuItemName(parent.0, item.0, text_c.as_ptr(), 0) };
+    Ok(())
+}
