@@ -242,3 +242,12 @@ pub fn check_menu_item_state(parent: &MenuId, item: &MenuItem) -> MenuItemState 
     unsafe { xplm_sys::XPLMCheckMenuItemState(parent.0, item.0, &mut state) };
     MenuItemState::from(state)
 }
+
+/// Enabled a menu item.
+///
+/// # Arguments
+/// * `parent` - a parent menu id which contains an item.
+/// * `item` - a menu item to update.
+pub fn enable_menu_item(parent: &MenuId, item: &MenuItem) {
+    unsafe { xplm_sys::XPLMEnableMenuItem(parent.0, item.0, 1) };
+}
