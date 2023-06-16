@@ -193,7 +193,7 @@ pub fn set_menu_item_name<T: Into<String>>(
     Ok(())
 }
 
-/// Checks a menu item
+/// Checks a menu item.
 ///
 /// # Arguments
 /// * `parent` - a parent menu id which contains an item.
@@ -202,11 +202,43 @@ pub fn check_menu_item(parent: &MenuId, item: &MenuItem) {
     unsafe { xplm_sys::XPLMCheckMenuItem(parent.0, item.0, xplm_sys::xplm_Menu_Checked as i32) };
 }
 
-/// Unchecks a menu item
+/// Unchecks a menu item.
 ///
 /// # Arguments
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
 pub fn uncheck_menu_item(parent: &MenuId, item: &MenuItem) {
     unsafe { xplm_sys::XPLMCheckMenuItem(parent.0, item.0, xplm_sys::xplm_Menu_Unchecked as i32) };
+}
+
+/// Menu item state.
+pub enum MenuItemState {
+    /// The menu has a mark next to it that is checked (lit).
+    Checked,
+    /// The menu has a mark next to it that is unmarked (not lit).
+    Unchecked,
+    /// There is no symbol to the left of the menu item.
+    NoCheck,
+}
+
+impl From<xplm_sys::XPLMMenuCheck> for MenuItemState {
+    fn from(value: xplm_sys::XPLMMenuCheck) -> Self {
+        match value {
+            0 => MenuItemState::NoCheck,
+            1 => MenuItemState::Unchecked,
+            2 => MenuItemState::Checked,
+            _ => MenuItemState::NoCheck,
+        }
+    }
+}
+
+/// Returns whether a menu item is checked or not.
+///
+/// # Arguments
+/// * `parent` - a parent menu id which contains an item.
+/// * `item` - a menu item to update.
+pub fn check_menu_item_state(parent: &MenuId, item: &MenuItem) -> MenuItemState {
+    let mut state = 0;
+    unsafe { xplm_sys::XPLMCheckMenuItemState(parent.0, item.0, &mut state) };
+    MenuItemState::from(state)
 }
