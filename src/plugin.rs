@@ -8,7 +8,7 @@ pub trait XPlugin: Sized {
 }
 
 #[macro_export]
-macro_rules! register {
+macro_rules! register_plugin {
     (
         instance = $plugin_type: ty,
         name = $name: literal,
