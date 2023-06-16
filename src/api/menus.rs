@@ -168,3 +168,11 @@ pub fn append_menu_item_with_command<T: Into<String>>(
     };
     Ok(MenuItem(item))
 }
+
+/// Adds a separator to the end of a menu.
+///
+/// # Arguments
+/// * `parent` - parent menu to add a separator to.
+pub fn append_menu_separator(parent: &MenuId) {
+    unsafe { xplm_sys::XPLMAppendMenuSeparator(parent.0) };
+}
