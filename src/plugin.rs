@@ -14,6 +14,7 @@ macro_rules! register_plugin {
         name = $name: literal,
         signature = $signature: literal,
         description = $description: literal,
+        log_prefix = $log_prefix: literal,
     ) => {
         use xplm::plugin::XPlugin;
 
@@ -35,6 +36,8 @@ macro_rules! register_plugin {
                 let src_c_length = src_c.to_bytes_with_nul().len();
                 std::ptr::copy_nonoverlapping(src_c.as_ptr(), dest, src_c_length);
             }
+
+            xplm::log::LOG_PREFIX.set($log_prefix);
 
             // Replacee with get_or_try_init after stabilization https://github.com/rust-lang/rust/issues/109737
             if PLUGIN_INSTANCE.get().is_none() {

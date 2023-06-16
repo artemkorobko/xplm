@@ -4,6 +4,8 @@ pub enum Level {
     Error,
 }
 
+pub static LOG_PREFIX: std::sync::OnceLock<&'static str> = std::sync::OnceLock::new();
+
 #[macro_export]
 macro_rules! log {
     // log!(Level::Info, "a log event")
@@ -15,7 +17,12 @@ macro_rules! log {
             $crate::log::Level::Error => "ERROR",
         };
 
-        let message = format!("{}: {}\n", level, args);
+        let message = if let Some(prefix) = $crate::log::LOG_PREFIX.get() {
+            format!("{} {}: {}\n", prefix, level, args)
+        } else {
+            format!("{}: {}\n", level, args)
+        };
+
         $crate::api::utilities::debug_string(message);
     }};
 }
