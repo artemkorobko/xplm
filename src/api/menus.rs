@@ -1,4 +1,4 @@
-use std::{ffi, string};
+use std::ffi;
 
 use thiserror::Error;
 
@@ -8,12 +8,12 @@ pub enum MenusError {
     /// Invalid menu ID
     #[error("invalid menu id")]
     InvalidId(xplm_sys::XPLMMenuID),
-    /// Invalid output string passed from Rust to C
-    #[error("invalid output string {0}")]
-    InvalidOutputString(ffi::NulError),
-    /// Invalid input string passed from C to Rust
-    #[error("invalid input string {0}")]
-    InvalidInputString(string::FromUtf8Error),
+    /// Can't create menu
+    #[error("can't create menu")]
+    CreateError,
+    /// Invalid menu name string passed to X-Plane
+    #[error("invalid menu name {0}")]
+    InvalidMenuName(ffi::NulError),
 }
 
 /// Menu idenitifier.
@@ -30,6 +30,9 @@ impl TryFrom<xplm_sys::XPLMMenuID> for MenuId {
         }
     }
 }
+
+/// Menu item.
+pub struct MenuItem(::std::os::raw::c_int);
 
 /// Returns the ID of the plug-ins menu, which is created for you at startup.
 ///
@@ -52,10 +55,47 @@ pub fn find_aircraft_menu() -> Result<MenuId, MenusError> {
     MenuId::try_from(id)
 }
 
-// /// Creates a new menu and returns its ID.
-// pub fn create_menu(name: &str) -> Result<MenuId, MenusError> {
-//     extern "C" fn callback(menu_ref: i32, item_ref: i32) {}
-// }
+/// Creates a new sub-menu and returns its ID.
+///
+/// # Arguments
+/// * `name` - menu name.
+/// * `parent_menu` - parent menu to attach sub-menu to.
+/// * `parent_item` - a menu item.
+///
+/// # Returns
+/// Returns a [`MenuId`] on success. Otherwise returns:
+/// [`MenusError::InvalidMenuName`] in case manu name contains invalid characters.
+/// [`MenusError::CreateError`] in case the menu can't be created.
+pub fn create_menu(
+    name: &str,
+    parent_menu: &MenuId,
+    parent_item: &MenuItem,
+) -> Result<MenuId, MenusError> {
+    unsafe extern "C" fn menu_handler(
+        _menu_ref: *mut ::std::os::raw::c_void,
+        _item_ref: *mut ::std::os::raw::c_void,
+    ) {
+        // let item = item_ref as *const Item;
+        // (*item).handle_click();
+    }
+
+    let name_c = ffi::CString::new(name).map_err(MenusError::InvalidMenuName)?;
+    let menu_id = unsafe {
+        xplm_sys::XPLMCreateMenu(
+            name_c.as_ptr(),
+            parent_menu.0,
+            parent_item.0,
+            Some(menu_handler),
+            std::ptr::null_mut(),
+        )
+    };
+
+    if menu_id.is_null() {
+        Err(MenusError::CreateError)
+    } else {
+        Ok(MenuId(menu_id))
+    }
+}
 
 /// This function destroys a menu that you have created. Use this to remove a submenu if necessary.
 /// (Normally this function will not be necessary.)
