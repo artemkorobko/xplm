@@ -1,4 +1,9 @@
-use std::{ffi, ops::DerefMut, path, str, sync::OnceLock};
+use std::{
+    ffi,
+    ops::{Deref, DerefMut},
+    path, str,
+    sync::OnceLock,
+};
 
 use thiserror::Error;
 
@@ -461,6 +466,14 @@ pub fn reload_scenery() {
 
 /// An opaque identifier for an X-Plane command
 pub struct Command(xplm_sys::XPLMCommandRef);
+
+impl Deref for Command {
+    type Target = xplm_sys::XPLMCommandRef;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 /// Looks up a command by name.
 ///

@@ -1,6 +1,8 @@
-use std::ffi;
+use std::{ffi, ops::Deref};
 
 use thiserror::Error;
+
+use super::utilities::Command;
 
 /// An error returned from plugin API calls
 #[derive(Error, Debug)]
@@ -145,5 +147,24 @@ pub fn append_menu_item<T: Into<String>>(parent: &MenuId, text: T) -> Result<Men
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
     let item =
         unsafe { xplm_sys::XPLMAppendMenuItem(parent.0, text_c.as_ptr(), std::ptr::null_mut(), 0) };
+    Ok(MenuItem(item))
+}
+
+/// Appends a new menu item to the bottom of a menu and returns its index but instead of the new menu
+/// item triggering the handler of the containiner menu, it will simply execute the passed-in command.
+///
+/// # Arguments
+/// * `parent` - parent menu to add item to.
+/// * `text` - a menu text.
+/// * `command` - a command to execute.
+pub fn append_menu_item_with_command<T: Into<String>>(
+    parent: &MenuId,
+    text: T,
+    command: &Command,
+) -> Result<MenuItem> {
+    let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
+    let item = unsafe {
+        xplm_sys::XPLMAppendMenuItemWithCommand(parent.0, text_c.as_ptr(), *command.deref())
+    };
     Ok(MenuItem(item))
 }
