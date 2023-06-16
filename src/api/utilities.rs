@@ -465,6 +465,7 @@ pub fn reload_scenery() {
 }
 
 /// An opaque identifier for an X-Plane command
+#[derive(Copy, Clone)]
 pub struct Command(xplm_sys::XPLMCommandRef);
 
 impl Deref for Command {
