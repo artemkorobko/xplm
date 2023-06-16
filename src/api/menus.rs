@@ -192,3 +192,12 @@ pub fn set_menu_item_name<T: Into<String>>(
     unsafe { xplm_sys::XPLMSetMenuItemName(parent.0, item.0, text_c.as_ptr(), 0) };
     Ok(())
 }
+
+/// Checks a menu item
+///
+/// # Arguments
+/// * `parent` - a parent menu id which contains an item.
+/// * `item` - a menu item to update.
+pub fn check_menu_item(parent: &MenuId, item: &MenuItem) {
+    unsafe { xplm_sys::XPLMCheckMenuItem(parent.0, item.0, xplm_sys::xplm_Menu_Checked as i32) };
+}
