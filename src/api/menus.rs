@@ -122,8 +122,16 @@ pub fn create_sub_menu(parent_menu: &MenuId, parent_item: &MenuItem) -> Result<M
 ///
 /// # Arguments
 /// * `id` - a menu id to destroy
-pub fn destroy_menu(id: MenuId) {
+pub fn destroy_menu(id: &MenuId) {
     unsafe { xplm_sys::XPLMDestroyMenu(id.0) };
+}
+
+/// Removes all menu items from a menu.
+/// 
+/// # Arguments
+/// * `id` - a menu id to destroy
+pub fn clear_all_menu_items(id: &MenuId) {
+    unsafe { xplm_sys::XPLMClearAllMenuItems(id.0) };
 }
 
 // /// Appends a new menu item to the bottom of a menu and returns its index.
