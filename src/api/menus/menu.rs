@@ -24,3 +24,26 @@ impl TryFrom<xplm_sys::XPLMMenuID> for MenuId {
         }
     }
 }
+
+/// Menu item identifier.
+pub struct MenuItemId(::std::os::raw::c_int);
+
+impl Deref for MenuItemId {
+    type Target = ::std::os::raw::c_int;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl TryFrom<::std::os::raw::c_int> for MenuItemId {
+    type Error = MenusError;
+
+    fn try_from(value: ::std::os::raw::c_int) -> std::result::Result<Self, Self::Error> {
+        if value < 0 {
+            Err(Self::Error::InvalidMenuItemId)
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
