@@ -1,22 +1,25 @@
+/// Coordinate native type.
+pub type CoordType = ::std::os::raw::c_int;
+
 /// X-Plane 2D coordinate definition.
 #[derive(Default)]
 pub struct Coord {
     /// The X coordinate.
-    pub x: ::std::os::raw::c_int,
+    pub x: CoordType,
     /// The Y coordinate.
-    pub y: ::std::os::raw::c_int,
+    pub y: CoordType,
 }
 
 impl Coord {
     /// Created a new coordinate.
     ///
     /// # Arguments
-    /// * `x` - an X coordinate.
-    /// * `y` - an Y coordinate.
+    /// * `x` - the X coordinate.
+    /// * `y` - the Y coordinate.
     ///
     /// # Returns
     /// Returns newly created coordinate representation.
-    pub fn new(x: ::std::os::raw::c_int, y: ::std::os::raw::c_int) -> Self {
+    pub fn new(x: CoordType, y: CoordType) -> Self {
         Self { x, y }
     }
 
@@ -27,7 +30,7 @@ impl Coord {
     ///
     /// # Returns
     /// Returns new instance of the coordinate with modified parameter.
-    pub fn x(mut self, value: ::std::os::raw::c_int) -> Self {
+    pub fn x(mut self, value: CoordType) -> Self {
         self.x = value;
         self
     }
@@ -39,7 +42,7 @@ impl Coord {
     ///
     /// # Returns
     /// Returns new instance of the coordinate with modified parameter.
-    pub fn y(mut self, value: ::std::os::raw::c_int) -> Self {
+    pub fn y(mut self, value: CoordType) -> Self {
         self.y = value;
         self
     }
