@@ -150,12 +150,12 @@ pub struct WindowLink {
 /// A window handler record to keep a window alive.
 pub struct WindowHandlerRecord {
     id: WindowId,
-    link: Box<WindowLink>,
+    _link: Box<WindowLink>,
 }
 
 impl Drop for WindowHandlerRecord {
     fn drop(&mut self) {
-        // destroy window
+        destroy_window(&self.id)
     }
 }
 
@@ -284,6 +284,14 @@ pub fn create_window_ex<H: WindowHandler>(
 
     Ok(WindowHandlerRecord {
         id: WindowId::try_from(id)?,
-        link,
+        _link: link,
     })
+}
+
+/// Destroys a window.
+///
+/// # Arguments
+/// * `id` - a window identifier.
+pub fn destroy_window(id: &WindowId) {
+    unsafe { xplm_sys::XPLMDestroyWindow(id.0) };
 }
