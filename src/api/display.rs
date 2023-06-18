@@ -1,108 +1,14 @@
-use std::{ffi, ops::DerefMut};
+pub mod error;
+pub mod rect;
+
+pub use error::DisplayError;
+pub use rect::Rect;
+
+use std::ops::DerefMut;
 
 use super::utilities::VirtualKey;
 
-/// An error returned from display API calls
-#[derive(thiserror::Error, Debug)]
-pub enum DisplayError {
-    /// Invalid window id returned from X-Plane
-    #[error("invalid window id")]
-    InvalidWindowId,
-    /// Invalid command name string passed to X-Plane
-    #[error("invalid command name {0}")]
-    InvalidCommandName(ffi::NulError),
-    /// Unknown mouse status passed from X-Plane
-    #[error("unknown mouse status {0}")]
-    UnknownMouseStatuts(xplm_sys::XPLMMouseStatus),
-    /// Unknown mouse wheel axis passed from X-Plane
-    #[error("unknown mouse wheel axis {0}")]
-    UnknownMouseWheelAxis(::std::os::raw::c_int),
-}
-
 pub type Result<T> = std::result::Result<T, DisplayError>;
-
-/// A simple rectangle representation.
-#[derive(Default)]
-pub struct Rect {
-    left: ::std::os::raw::c_int,
-    top: ::std::os::raw::c_int,
-    right: ::std::os::raw::c_int,
-    bottom: ::std::os::raw::c_int,
-}
-
-impl Rect {
-    /// Constructs a new rectange.
-    ///
-    /// # Arguments
-    /// * `left` - the left coordinate of the rectangle.
-    /// * `top` - the top coordinate of the rectangle.
-    /// * `width` - the width of the rectangle.
-    /// * `height` - the height of the rectangle.
-    ///
-    /// # Returns
-    /// Returns newly create rectangle.
-    pub fn new(
-        left: ::std::os::raw::c_int,
-        top: ::std::os::raw::c_int,
-        width: ::std::os::raw::c_int,
-        height: ::std::os::raw::c_int,
-    ) -> Self {
-        Self {
-            left,
-            top,
-            right: width,
-            bottom: height,
-        }
-    }
-
-    /// Sets the left coordinate of the rectangle.
-    ///
-    /// # Arguments
-    /// * `value` - the left coordinate of the rectangle.
-    ///
-    /// # Returns
-    /// Returns new instance of the rectangle with modified parameter.
-    pub fn left(mut self, value: ::std::os::raw::c_int) -> Self {
-        self.left = value;
-        self
-    }
-
-    /// Sets the top coordinate of the rectangle.
-    ///
-    /// # Arguments
-    /// * `value` - the top coordinate of the rectangle.
-    ///
-    /// # Returns
-    /// Returns new instance of the rectangle with modified parameter.
-    pub fn top(mut self, value: ::std::os::raw::c_int) -> Self {
-        self.top = value;
-        self
-    }
-
-    /// Sets the right coordinate of the rectangle.
-    ///
-    /// # Arguments
-    /// * `value` - the right coordinate of the rectangle.
-    ///
-    /// # Returns
-    /// Returns new instance of the rectangle with modified parameter.
-    pub fn right(mut self, value: ::std::os::raw::c_int) -> Self {
-        self.right = value;
-        self
-    }
-
-    /// Sets the bottom coordinate of the rectangle.
-    ///
-    /// # Arguments
-    /// * `value` - the bottom coordinate of the rectangle.
-    ///
-    /// # Returns
-    /// Returns new instance of the rectangle with modified parameter.
-    pub fn bottom(mut self, value: ::std::os::raw::c_int) -> Self {
-        self.bottom = value;
-        self
-    }
-}
 
 /// Window identifier.
 pub struct WindowId(xplm_sys::XPLMWindowID);
