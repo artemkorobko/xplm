@@ -1,3 +1,4 @@
+pub mod coord;
 pub mod error;
 pub mod event;
 pub mod key;
@@ -7,6 +8,7 @@ pub mod window;
 
 use std::ops::{Deref, DerefMut};
 
+pub use coord::Coord;
 pub use error::DisplayError;
 pub use event::EventState;
 pub use key::KeyFlags;
