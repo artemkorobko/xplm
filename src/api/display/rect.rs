@@ -1,10 +1,17 @@
+/// Rectangle native type.
+pub type RectCoordType = ::std::os::raw::c_int;
+
 /// A simple rectangle representation.
 #[derive(Default)]
 pub struct Rect {
-    pub left: ::std::os::raw::c_int,
-    pub top: ::std::os::raw::c_int,
-    pub right: ::std::os::raw::c_int,
-    pub bottom: ::std::os::raw::c_int,
+    /// The left coordinate.
+    pub left: RectCoordType,
+    /// The top coordinate.
+    pub top: RectCoordType,
+    /// The right coordinate.
+    pub right: RectCoordType,
+    /// The bottom coordinate.
+    pub bottom: RectCoordType,
 }
 
 impl Rect {
@@ -19,10 +26,10 @@ impl Rect {
     /// # Returns
     /// Returns newly create rectangle.
     pub fn new(
-        left: ::std::os::raw::c_int,
-        top: ::std::os::raw::c_int,
-        width: ::std::os::raw::c_int,
-        height: ::std::os::raw::c_int,
+        left: RectCoordType,
+        top: RectCoordType,
+        width: RectCoordType,
+        height: RectCoordType,
     ) -> Self {
         Self {
             left,
@@ -39,7 +46,7 @@ impl Rect {
     ///
     /// # Returns
     /// Returns new instance of the rectangle with modified parameter.
-    pub fn left(mut self, value: ::std::os::raw::c_int) -> Self {
+    pub fn left(mut self, value: RectCoordType) -> Self {
         self.left = value;
         self
     }
@@ -51,7 +58,7 @@ impl Rect {
     ///
     /// # Returns
     /// Returns new instance of the rectangle with modified parameter.
-    pub fn top(mut self, value: ::std::os::raw::c_int) -> Self {
+    pub fn top(mut self, value: RectCoordType) -> Self {
         self.top = value;
         self
     }
@@ -63,7 +70,7 @@ impl Rect {
     ///
     /// # Returns
     /// Returns new instance of the rectangle with modified parameter.
-    pub fn right(mut self, value: ::std::os::raw::c_int) -> Self {
+    pub fn right(mut self, value: RectCoordType) -> Self {
         self.right = value;
         self
     }
@@ -75,7 +82,7 @@ impl Rect {
     ///
     /// # Returns
     /// Returns new instance of the rectangle with modified parameter.
-    pub fn bottom(mut self, value: ::std::os::raw::c_int) -> Self {
+    pub fn bottom(mut self, value: RectCoordType) -> Self {
         self.bottom = value;
         self
     }
