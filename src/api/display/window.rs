@@ -53,6 +53,13 @@ pub trait WindowHandler: 'static {
 pub struct WindowLink(Box<dyn WindowHandler>);
 
 impl WindowLink {
+    /// Created a new [`WindowLink`] instance.
+    ///
+    /// # Arguments
+    /// * `value` - a pointer to the [`WindowHandler`] instance.
+    ///
+    /// # Returns
+    /// Return the [`WindowLink`] instance.
     pub fn new(value: Box<dyn WindowHandler>) -> Self {
         Self(value)
     }
@@ -92,6 +99,14 @@ pub struct WindowHandlerRecord {
 }
 
 impl WindowHandlerRecord {
+    /// Creates a new [`WindowHandlerRecord`] instance.
+    ///
+    /// # Arguments
+    /// * `id` - the window identifier. See [`WindowId`] for more details.
+    /// * `link` - a pointer to the window link. See [`WindowLink`] for more details.
+    ///
+    /// # Return
+    /// Return the new [`WindowHandlerRecord`] instance.
     pub fn new(id: WindowId, link: Box<WindowLink>) -> Self {
         Self { id, _link: link }
     }
