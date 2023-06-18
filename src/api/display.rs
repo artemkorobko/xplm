@@ -52,7 +52,8 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         match MouseStatus::try_from(mouse) {
             Ok(status) => {
                 let link = refcon as *mut WindowLink;
-                (*link).mouse_click(x, y, status).into()
+                let coord = Coord::default().x(x).y(y);
+                (*link).mouse_click(coord, status).into()
             }
             Err(err) => {
                 crate::error!("{}", err);
@@ -87,7 +88,8 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         refcon: *mut ::std::os::raw::c_void,
     ) -> xplm_sys::XPLMCursorStatus {
         let link = refcon as *mut WindowLink;
-        (*link).handle_cursor(x, y);
+        let coord = Coord::default().x(x).y(y);
+        (*link).handle_cursor(coord);
         xplm_sys::xplm_CursorDefault as _
     }
 
@@ -101,7 +103,10 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
     ) -> ::std::os::raw::c_int {
         let link = refcon as *mut WindowLink;
         match WheelAxis::try_from(wheel) {
-            Ok(wheel_axis) => (*link).handle_mouse_wheel(x, y, wheel_axis, clicks).into(),
+            Ok(wheel_axis) => {
+                let coord = Coord::default().x(x).y(y);
+                (*link).handle_mouse_wheel(coord, wheel_axis, clicks).into()
+            }
             Err(err) => {
                 crate::error!("{}", err);
                 EventState::Propagate.into()

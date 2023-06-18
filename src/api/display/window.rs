@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use crate::api::utilities::VirtualKey;
 
-use super::{destroy_window, DisplayError, EventState, KeyFlags, MouseStatus, WheelAxis};
+use super::{destroy_window, Coord, DisplayError, EventState, KeyFlags, MouseStatus, WheelAxis};
 
 /// Window identifier.
 pub struct WindowId(xplm_sys::XPLMWindowID);
@@ -35,21 +35,15 @@ pub trait WindowHandler: 'static {
     /// - When the user clicks the mouse button down.
     /// - (optionally) when the user drags the mouse after a down-click, but before the up-click
     /// - When the user releases the down-clicked mouse button.
-    fn mouse_click(
-        &mut self,
-        x: ::std::os::raw::c_int,
-        y: ::std::os::raw::c_int,
-        status: MouseStatus,
-    ) -> EventState;
+    fn mouse_click(&mut self, coord: Coord, status: MouseStatus) -> EventState;
     /// This function is called when a key is pressed or keyboard focus is taken away from your window.
     fn handle_key(&mut self, key: char, virtual_key: VirtualKey, flags: KeyFlags);
     /// Get's called when the mouse is over the plugin window.
-    fn handle_cursor(&mut self, x: ::std::os::raw::c_int, y: ::std::os::raw::c_int);
+    fn handle_cursor(&mut self, coord: Coord);
     /// Get's called when one of the mouse wheels is scrolled within the window.
     fn handle_mouse_wheel(
         &mut self,
-        x: ::std::os::raw::c_int,
-        y: ::std::os::raw::c_int,
+        coord: Coord,
         wheel_axis: WheelAxis,
         clicks: i32,
     ) -> EventState;
@@ -69,31 +63,25 @@ impl WindowHandler for WindowLink {
         self.0.draw();
     }
 
-    fn mouse_click(
-        &mut self,
-        x: std::os::raw::c_int,
-        y: std::os::raw::c_int,
-        status: MouseStatus,
-    ) -> EventState {
-        self.0.mouse_click(x, y, status)
+    fn mouse_click(&mut self, coord: Coord, status: MouseStatus) -> EventState {
+        self.0.mouse_click(coord, status)
     }
 
     fn handle_key(&mut self, key: char, virtual_key: VirtualKey, flags: KeyFlags) {
         self.0.handle_key(key, virtual_key, flags);
     }
 
-    fn handle_cursor(&mut self, x: std::os::raw::c_int, y: std::os::raw::c_int) {
-        self.0.handle_cursor(x, y);
+    fn handle_cursor(&mut self, coord: Coord) {
+        self.0.handle_cursor(coord);
     }
 
     fn handle_mouse_wheel(
         &mut self,
-        x: std::os::raw::c_int,
-        y: std::os::raw::c_int,
+        coord: Coord,
         wheel_axis: WheelAxis,
         clicks: i32,
     ) -> EventState {
-        self.0.handle_mouse_wheel(x, y, wheel_axis, clicks)
+        self.0.handle_mouse_wheel(coord, wheel_axis, clicks)
     }
 }
 
