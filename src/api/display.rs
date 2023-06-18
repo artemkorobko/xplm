@@ -1,10 +1,12 @@
 pub mod error;
 pub mod event;
+pub mod key;
 pub mod mouse;
 pub mod rect;
 
 pub use error::DisplayError;
 pub use event::EventState;
+pub use key::KeyFlags;
 pub use mouse::{MouseStatus, WheelAxis};
 pub use rect::Rect;
 
@@ -25,34 +27,6 @@ impl TryFrom<xplm_sys::XPLMWindowID> for WindowId {
             Err(Self::Error::InvalidWindowId)
         } else {
             Ok(WindowId(value))
-        }
-    }
-}
-
-/// Modifier keys.
-pub enum KeyFlag {
-    Shift,
-    OptionAlt,
-    Control,
-    Down,
-    Up,
-}
-
-/// Key flags bitmap.
-pub struct KeyFlags(xplm_sys::XPLMKeyFlags);
-
-impl KeyFlags {
-    pub fn contains(&self, flag: KeyFlag) -> bool {
-        match flag {
-            KeyFlag::Shift => (self.0 & xplm_sys::xplm_ShiftFlag as xplm_sys::XPLMKeyFlags) != 0,
-            KeyFlag::OptionAlt => {
-                (self.0 & xplm_sys::xplm_OptionAltFlag as xplm_sys::XPLMKeyFlags) != 0
-            }
-            KeyFlag::Control => {
-                self.0 & (xplm_sys::xplm_ControlFlag as xplm_sys::XPLMKeyFlags) != 0
-            }
-            KeyFlag::Down => self.0 & (xplm_sys::xplm_DownFlag as xplm_sys::XPLMKeyFlags) != 0,
-            KeyFlag::Up => self.0 & (xplm_sys::xplm_UpFlag as xplm_sys::XPLMKeyFlags) != 0,
         }
     }
 }
@@ -154,7 +128,7 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
             Ok(virtual_key) => {
                 (*link)
                     .handler
-                    .handle_key(key as u8 as char, virtual_key, KeyFlags(flags))
+                    .handle_key(key as u8 as char, virtual_key, KeyFlags::from(flags))
             }
             Err(err) => {
                 crate::error!("{}", err);
