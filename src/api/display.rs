@@ -8,13 +8,13 @@ pub mod window;
 
 use std::ops::{Deref, DerefMut};
 
-pub use coord::Coord;
-pub use error::DisplayError;
-pub use event::EventState;
-pub use key::KeyFlags;
-pub use mouse::{MouseStatus, WheelAxis};
-pub use rect::Rect;
-pub use window::{WindowHandler, WindowHandlerRecord, WindowLink};
+pub use self::coord::Coord;
+pub use self::error::DisplayError;
+pub use self::event::EventState;
+pub use self::key::KeyFlags;
+pub use self::mouse::{MouseStatus, WheelAxis};
+pub use self::rect::Rect;
+pub use self::window::{WindowHandler, WindowHandlerRecord, WindowLink};
 
 use crate::api::display::window::WindowId;
 

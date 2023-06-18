@@ -1,23 +1,10 @@
+pub mod error;
+
 use std::{ffi, ops::Deref};
 
-use super::utilities::Command;
+pub use self::error::MenusError;
 
-/// An error returned from menu API calls
-#[derive(thiserror::Error, Debug)]
-pub enum MenusError {
-    /// Invalid menu ID
-    #[error("invalid menu id")]
-    InvalidId,
-    /// Invalid menu item ID
-    #[error("invalid menu item id")]
-    InvalidMenuItemId,
-    /// Invalid menu name string passed to X-Plane
-    #[error("invalid menu name {0}")]
-    InvalidMenuName(ffi::NulError),
-    /// Unknown menu item state
-    #[error("unknown menu item state {0}")]
-    UnknownMenuItemState(xplm_sys::XPLMMenuCheck),
-}
+use super::utilities::Command;
 
 pub type Result<T> = std::result::Result<T, MenusError>;
 
