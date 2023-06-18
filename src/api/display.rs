@@ -25,10 +25,7 @@ pub type Result<T> = std::result::Result<T, DisplayError>;
 /// This routine creates a new “modern” window.
 ///
 /// # Arguments
-/// * `left` - left position of the window in pixels.
-/// * `top` - top position of the window in pixels.
-/// * `right` - right position of the window in pixels.
-/// * `bottom` - bottom position of the window in pixels.
+/// * `rect` - window rectangle.
 /// * `hanndler` - window events handler.
 ///
 /// # Returns
