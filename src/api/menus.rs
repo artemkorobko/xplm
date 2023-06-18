@@ -1,27 +1,14 @@
 pub mod error;
+pub mod menu;
 
 use std::{ffi, ops::Deref};
 
 pub use self::error::MenusError;
+pub use self::menu::MenuId;
 
 use super::utilities::Command;
 
 pub type Result<T> = std::result::Result<T, MenusError>;
-
-/// Menu idenitifier.
-pub struct MenuId(xplm_sys::XPLMMenuID);
-
-impl TryFrom<xplm_sys::XPLMMenuID> for MenuId {
-    type Error = MenusError;
-
-    fn try_from(value: xplm_sys::XPLMMenuID) -> Result<Self> {
-        if value.is_null() {
-            Err(Self::Error::InvalidId)
-        } else {
-            Ok(Self(value))
-        }
-    }
-}
 
 /// Menu item identifier.
 pub struct MenuItemId(::std::os::raw::c_int);
@@ -103,7 +90,7 @@ pub fn create_sub_menu(parent_menu: &MenuId, parent_item: &MenuItemId) -> Result
     let id = unsafe {
         xplm_sys::XPLMCreateMenu(
             std::ptr::null_mut(),
-            parent_menu.0,
+            *parent_menu.deref(),
             parent_item.0,
             Some(menu_handler),
             std::ptr::null_mut(),
@@ -119,7 +106,7 @@ pub fn create_sub_menu(parent_menu: &MenuId, parent_item: &MenuItemId) -> Result
 /// # Arguments
 /// * `id` - a menu id to destroy
 pub fn destroy_menu(id: &MenuId) {
-    unsafe { xplm_sys::XPLMDestroyMenu(id.0) };
+    unsafe { xplm_sys::XPLMDestroyMenu(*id.deref()) };
 }
 
 /// Removes all menu items from a menu.
@@ -127,7 +114,7 @@ pub fn destroy_menu(id: &MenuId) {
 /// # Arguments
 /// * `id` - a menu id to destroy
 pub fn clear_all_menu_items(id: &MenuId) {
-    unsafe { xplm_sys::XPLMClearAllMenuItems(id.0) };
+    unsafe { xplm_sys::XPLMClearAllMenuItems(*id.deref()) };
 }
 
 /// Appends a new menu item to the bottom of a menu and returns its index.
@@ -137,8 +124,9 @@ pub fn clear_all_menu_items(id: &MenuId) {
 /// * `text` - a menu text.
 pub fn append_menu_item<T: Into<String>>(parent: &MenuId, text: T) -> Result<MenuItemId> {
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
-    let id =
-        unsafe { xplm_sys::XPLMAppendMenuItem(parent.0, text_c.as_ptr(), std::ptr::null_mut(), 0) };
+    let id = unsafe {
+        xplm_sys::XPLMAppendMenuItem(*parent.deref(), text_c.as_ptr(), std::ptr::null_mut(), 0)
+    };
     MenuItemId::try_from(id)
 }
 
@@ -156,7 +144,7 @@ pub fn append_menu_item_with_command<T: Into<String>>(
 ) -> Result<MenuItemId> {
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
     let id = unsafe {
-        xplm_sys::XPLMAppendMenuItemWithCommand(parent.0, text_c.as_ptr(), *command.deref())
+        xplm_sys::XPLMAppendMenuItemWithCommand(*parent.deref(), text_c.as_ptr(), *command.deref())
     };
     MenuItemId::try_from(id)
 }
@@ -166,7 +154,7 @@ pub fn append_menu_item_with_command<T: Into<String>>(
 /// # Arguments
 /// * `parent` - parent menu to add a separator to.
 pub fn append_menu_separator(parent: &MenuId) {
-    unsafe { xplm_sys::XPLMAppendMenuSeparator(parent.0) };
+    unsafe { xplm_sys::XPLMAppendMenuSeparator(*parent.deref()) };
 }
 
 /// Changes the name of an existing menu item.
@@ -181,7 +169,7 @@ pub fn set_menu_item_name<T: Into<String>>(
     text: T,
 ) -> Result<()> {
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
-    unsafe { xplm_sys::XPLMSetMenuItemName(parent.0, item.0, text_c.as_ptr(), 0) };
+    unsafe { xplm_sys::XPLMSetMenuItemName(*parent.deref(), item.0, text_c.as_ptr(), 0) };
     Ok(())
 }
 
@@ -191,7 +179,9 @@ pub fn set_menu_item_name<T: Into<String>>(
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
 pub fn check_menu_item(parent: &MenuId, item: &MenuItemId) {
-    unsafe { xplm_sys::XPLMCheckMenuItem(parent.0, item.0, xplm_sys::xplm_Menu_Checked as i32) };
+    unsafe {
+        xplm_sys::XPLMCheckMenuItem(*parent.deref(), item.0, xplm_sys::xplm_Menu_Checked as i32)
+    };
 }
 
 /// Unchecks a menu item.
@@ -200,7 +190,13 @@ pub fn check_menu_item(parent: &MenuId, item: &MenuItemId) {
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
 pub fn uncheck_menu_item(parent: &MenuId, item: &MenuItemId) {
-    unsafe { xplm_sys::XPLMCheckMenuItem(parent.0, item.0, xplm_sys::xplm_Menu_Unchecked as i32) };
+    unsafe {
+        xplm_sys::XPLMCheckMenuItem(
+            *parent.deref(),
+            item.0,
+            xplm_sys::xplm_Menu_Unchecked as i32,
+        )
+    };
 }
 
 /// Menu item state.
@@ -233,7 +229,7 @@ impl TryFrom<xplm_sys::XPLMMenuCheck> for MenuItemState {
 /// * `item` - a menu item to update.
 pub fn check_menu_item_state(parent: &MenuId, item: &MenuItemId) -> Result<MenuItemState> {
     let mut state = 0;
-    unsafe { xplm_sys::XPLMCheckMenuItemState(parent.0, item.0, &mut state) };
+    unsafe { xplm_sys::XPLMCheckMenuItemState(*parent.deref(), item.0, &mut state) };
     MenuItemState::try_from(state)
 }
 
@@ -243,7 +239,7 @@ pub fn check_menu_item_state(parent: &MenuId, item: &MenuItemId) -> Result<MenuI
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
 pub fn enable_menu_item(parent: &MenuId, item: &MenuItemId) {
-    unsafe { xplm_sys::XPLMEnableMenuItem(parent.0, item.0, 1) };
+    unsafe { xplm_sys::XPLMEnableMenuItem(*parent.deref(), item.0, 1) };
 }
 
 /// Disables a menu item.
@@ -252,7 +248,7 @@ pub fn enable_menu_item(parent: &MenuId, item: &MenuItemId) {
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
 pub fn disable_menu_item(parent: &MenuId, item: &MenuItemId) {
-    unsafe { xplm_sys::XPLMEnableMenuItem(parent.0, item.0, 0) };
+    unsafe { xplm_sys::XPLMEnableMenuItem(*parent.deref(), item.0, 0) };
 }
 
 /// Removes a menu item from a menu.
@@ -261,5 +257,5 @@ pub fn disable_menu_item(parent: &MenuId, item: &MenuItemId) {
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
 pub fn remove_menu_item(parent: &MenuId, item: &MenuItemId) {
-    unsafe { xplm_sys::XPLMRemoveMenuItem(parent.0, item.0) };
+    unsafe { xplm_sys::XPLMRemoveMenuItem(*parent.deref(), item.0) };
 }
