@@ -3,78 +3,22 @@ pub mod event;
 pub mod key;
 pub mod mouse;
 pub mod rect;
+pub mod window;
+
+use std::ops::{Deref, DerefMut};
 
 pub use error::DisplayError;
 pub use event::EventState;
 pub use key::KeyFlags;
 pub use mouse::{MouseStatus, WheelAxis};
 pub use rect::Rect;
+pub use window::{WindowHandler, WindowHandlerRecord, WindowLink};
 
-use std::ops::DerefMut;
+use crate::api::display::window::WindowId;
 
 use super::utilities::VirtualKey;
 
 pub type Result<T> = std::result::Result<T, DisplayError>;
-
-/// Window identifier.
-pub struct WindowId(xplm_sys::XPLMWindowID);
-
-impl TryFrom<xplm_sys::XPLMWindowID> for WindowId {
-    type Error = DisplayError;
-
-    fn try_from(value: xplm_sys::XPLMWindowID) -> std::result::Result<Self, Self::Error> {
-        if value.is_null() {
-            Err(Self::Error::InvalidWindowId)
-        } else {
-            Ok(WindowId(value))
-        }
-    }
-}
-
-/// Window handler
-pub trait WindowHandler: 'static {
-    /// A callback to handle 2-D drawing of a window.
-    fn draw(&mut self);
-    /// A callback for one of three events:
-    /// - When the user clicks the mouse button down.
-    /// - (optionally) when the user drags the mouse after a down-click, but before the up-click
-    /// - When the user releases the down-clicked mouse button.
-    fn mouse_click(
-        &mut self,
-        x: ::std::os::raw::c_int,
-        y: ::std::os::raw::c_int,
-        status: MouseStatus,
-    ) -> EventState;
-    /// This function is called when a key is pressed or keyboard focus is taken away from your window.
-    fn handle_key(&mut self, key: char, virtual_key: VirtualKey, flags: KeyFlags);
-    /// Get's called when the mouse is over the plugin window.
-    fn handle_cursor(&mut self, x: ::std::os::raw::c_int, y: ::std::os::raw::c_int);
-    /// Get's called when one of the mouse wheels is scrolled within the window.
-    fn handle_mouse_wheel(
-        &mut self,
-        x: ::std::os::raw::c_int,
-        y: ::std::os::raw::c_int,
-        wheel_axis: WheelAxis,
-        clicks: i32,
-    ) -> EventState;
-}
-
-/// A link to [`WindowHandler`] for a given window.
-pub struct WindowLink {
-    handler: Box<dyn WindowHandler>,
-}
-
-/// A window handler record to keep a window alive.
-pub struct WindowHandlerRecord {
-    id: WindowId,
-    _link: Box<WindowLink>,
-}
-
-impl Drop for WindowHandlerRecord {
-    fn drop(&mut self) {
-        destroy_window(&self.id)
-    }
-}
 
 /// This routine creates a new “modern” window.
 ///
@@ -93,7 +37,7 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         refcon: *mut ::std::os::raw::c_void,
     ) {
         let link = refcon as *mut WindowLink;
-        (*link).handler.draw();
+        (*link).draw();
     }
 
     unsafe extern "C" fn mouse_click(
@@ -106,7 +50,7 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         match MouseStatus::try_from(mouse) {
             Ok(status) => {
                 let link = refcon as *mut WindowLink;
-                (*link).handler.mouse_click(x, y, status).into()
+                (*link).mouse_click(x, y, status).into()
             }
             Err(err) => {
                 crate::error!("{}", err);
@@ -126,9 +70,7 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         let link = refcon as *mut WindowLink;
         match VirtualKey::try_from(virtual_key) {
             Ok(virtual_key) => {
-                (*link)
-                    .handler
-                    .handle_key(key as u8 as char, virtual_key, KeyFlags::from(flags))
+                (*link).handle_key(key as u8 as char, virtual_key, KeyFlags::from(flags))
             }
             Err(err) => {
                 crate::error!("{}", err);
@@ -143,7 +85,7 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         refcon: *mut ::std::os::raw::c_void,
     ) -> xplm_sys::XPLMCursorStatus {
         let link = refcon as *mut WindowLink;
-        (*link).handler.handle_cursor(x, y);
+        (*link).handle_cursor(x, y);
         xplm_sys::xplm_CursorDefault as _
     }
 
@@ -157,10 +99,7 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
     ) -> ::std::os::raw::c_int {
         let link = refcon as *mut WindowLink;
         match WheelAxis::try_from(wheel) {
-            Ok(wheel_axis) => (*link)
-                .handler
-                .handle_mouse_wheel(x, y, wheel_axis, clicks)
-                .into(),
+            Ok(wheel_axis) => (*link).handle_mouse_wheel(x, y, wheel_axis, clicks).into(),
             Err(err) => {
                 crate::error!("{}", err);
                 EventState::Propagate.into()
@@ -168,10 +107,7 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         }
     }
 
-    let mut link = Box::new(WindowLink {
-        handler: Box::new(handler),
-    });
-
+    let mut link = Box::new(WindowLink::new(Box::new(handler)));
     let link_ptr: *mut WindowLink = link.deref_mut();
     let mut params = xplm_sys::XPLMCreateWindow_t {
         structSize: std::mem::size_of::<xplm_sys::XPLMCreateWindow_t>() as _,
@@ -192,11 +128,7 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
     };
 
     let id = unsafe { xplm_sys::XPLMCreateWindowEx(&mut params) };
-
-    Ok(WindowHandlerRecord {
-        id: WindowId::try_from(id)?,
-        _link: link,
-    })
+    Ok(WindowHandlerRecord::new(WindowId::try_from(id)?, link))
 }
 
 /// Destroys a window.
@@ -204,5 +136,5 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
 /// # Arguments
 /// * `id` - a window identifier.
 pub fn destroy_window(id: &WindowId) {
-    unsafe { xplm_sys::XPLMDestroyWindow(id.0) };
+    unsafe { xplm_sys::XPLMDestroyWindow(*id.deref()) };
 }
