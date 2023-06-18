@@ -1,7 +1,11 @@
 pub mod error;
+pub mod event;
+pub mod mouse;
 pub mod rect;
 
 pub use error::DisplayError;
+pub use event::EventState;
+pub use mouse::MouseStatus;
 pub use rect::Rect;
 
 use std::ops::DerefMut;
@@ -21,43 +25,6 @@ impl TryFrom<xplm_sys::XPLMWindowID> for WindowId {
             Err(Self::Error::InvalidWindowId)
         } else {
             Ok(WindowId(value))
-        }
-    }
-}
-
-/// Mouse status passed in [`WindowHandler::mouse_click`].
-pub enum MouseStatus {
-    Up,
-    Down,
-    Drag,
-}
-
-impl TryFrom<xplm_sys::XPLMMouseStatus> for MouseStatus {
-    type Error = DisplayError;
-
-    fn try_from(value: xplm_sys::XPLMMouseStatus) -> std::result::Result<Self, Self::Error> {
-        match value as _ {
-            xplm_sys::xplm_MouseUp => Ok(Self::Up),
-            xplm_sys::xplm_MouseDown => Ok(Self::Down),
-            xplm_sys::xplm_MouseDrag => Ok(Self::Drag),
-            _ => Err(Self::Error::UnknownMouseStatuts(value)),
-        }
-    }
-}
-
-/// Result returned from [`WindowHandler::mouse_click`] function.
-pub enum EventState {
-    /// Consume click.
-    Consume,
-    /// Propagate click to other consumers.
-    Propagate,
-}
-
-impl From<EventState> for ::std::os::raw::c_int {
-    fn from(value: EventState) -> Self {
-        match value {
-            EventState::Consume => 1,
-            EventState::Propagate => 0,
         }
     }
 }
