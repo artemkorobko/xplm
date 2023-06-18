@@ -1,26 +1,11 @@
 pub mod error;
+pub mod id;
 
-use std::ffi;
+use std::{ffi, ops::Deref};
 
-use self::error::PluginError;
+use self::{error::PluginError, id::PluginId};
 
 pub type Result<T> = std::result::Result<T, PluginError>;
-
-/// A plugin identifier
-#[derive(Copy, Clone, Debug)]
-pub struct PluginId(xplm_sys::XPLMPluginID);
-
-impl TryFrom<xplm_sys::XPLMPluginID> for PluginId {
-    type Error = PluginError;
-
-    fn try_from(value: xplm_sys::XPLMPluginID) -> Result<Self> {
-        if value < 0 {
-            Err(Self::Error::InvalidId(value))
-        } else {
-            Ok(PluginId(value))
-        }
-    }
-}
 
 /// Returns the plugin ID of the calling plug-in. Call this to get your own ID.
 ///
@@ -114,7 +99,7 @@ pub fn get_plugin_info(id: &PluginId) -> Result<PluginInfo> {
         let mut out_description = [0; BUF_LEN];
 
         xplm_sys::XPLMGetPluginInfo(
-            id.0,
+            *id.deref(),
             out_name.as_mut_ptr(),
             out_file_path.as_mut_ptr(),
             out_signature.as_mut_ptr(),
@@ -154,7 +139,7 @@ pub fn get_plugin_info(id: &PluginId) -> Result<PluginInfo> {
 /// # Arguments
 /// * `id` - the plugin identifier. See [`PluginId`].
 pub fn is_plugin_enabled(id: &PluginId) -> bool {
-    unsafe { xplm_sys::XPLMIsPluginEnabled(id.0) == 1 }
+    unsafe { xplm_sys::XPLMIsPluginEnabled(*id.deref()) == 1 }
 }
 
 /// Enables a plug-in if it is not already enabled. Plugins may fail to enable
@@ -167,12 +152,12 @@ pub fn is_plugin_enabled(id: &PluginId) -> bool {
 /// Returns `true` if the plugin was enabled or successfully enables itself. Otherwise returns `false`.
 ///
 pub fn enable_plugin(id: &PluginId) -> bool {
-    unsafe { xplm_sys::XPLMEnablePlugin(id.0) == 1 }
+    unsafe { xplm_sys::XPLMEnablePlugin(*id.deref()) == 1 }
 }
 
 /// Disables an enabled plug-in.
 pub fn disable_plugin(id: &PluginId) {
-    unsafe { xplm_sys::XPLMDisablePlugin(id.0) };
+    unsafe { xplm_sys::XPLMDisablePlugin(*id.deref()) };
 }
 
 /// Reloads all plug-ins. Once this routine is called and you return from the callback
@@ -205,7 +190,7 @@ impl AsMessageParam for NoMessageParam {
 /// * `id` - the plugin identifier. See [`PluginId`].
 /// * `message` - the unique message identifier.
 pub fn send_message_to_plugin<P: AsMessageParam>(id: &PluginId, message: i32, param: P) {
-    unsafe { xplm_sys::XPLMSendMessageToPlugin(id.0, message, param.as_message_param()) };
+    unsafe { xplm_sys::XPLMSendMessageToPlugin(*id.deref(), message, param.as_message_param()) };
 }
 
 /// Broadcasts a message to all plug-ins. Only enabled plug-ins with a message
