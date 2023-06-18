@@ -19,3 +19,21 @@ impl TryFrom<xplm_sys::XPLMMouseStatus> for MouseStatus {
         }
     }
 }
+
+/// The mouse wheel axis.
+pub enum WheelAxis {
+    Vertical,
+    Horizontal,
+}
+
+impl TryFrom<::std::os::raw::c_int> for WheelAxis {
+    type Error = DisplayError;
+
+    fn try_from(value: ::std::os::raw::c_int) -> std::result::Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Vertical),
+            1 => Ok(Self::Horizontal),
+            _ => Err(Self::Error::UnknownMouseWheelAxis(value)),
+        }
+    }
+}

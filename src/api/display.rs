@@ -5,7 +5,7 @@ pub mod rect;
 
 pub use error::DisplayError;
 pub use event::EventState;
-pub use mouse::MouseStatus;
+pub use mouse::{MouseStatus, WheelAxis};
 pub use rect::Rect;
 
 use std::ops::DerefMut;
@@ -25,24 +25,6 @@ impl TryFrom<xplm_sys::XPLMWindowID> for WindowId {
             Err(Self::Error::InvalidWindowId)
         } else {
             Ok(WindowId(value))
-        }
-    }
-}
-
-/// The mouse wheel axis.
-pub enum WheelAxis {
-    Vertical,
-    Horizontal,
-}
-
-impl TryFrom<::std::os::raw::c_int> for WheelAxis {
-    type Error = DisplayError;
-
-    fn try_from(value: ::std::os::raw::c_int) -> std::result::Result<Self, Self::Error> {
-        match value {
-            0 => Ok(Self::Vertical),
-            1 => Ok(Self::Horizontal),
-            _ => Err(Self::Error::UnknownMouseWheelAxis(value)),
         }
     }
 }
