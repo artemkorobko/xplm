@@ -21,6 +21,89 @@ pub enum DisplayError {
 
 pub type Result<T> = std::result::Result<T, DisplayError>;
 
+/// A simple rectangle representation.
+#[derive(Default)]
+pub struct Rect {
+    left: ::std::os::raw::c_int,
+    top: ::std::os::raw::c_int,
+    right: ::std::os::raw::c_int,
+    bottom: ::std::os::raw::c_int,
+}
+
+impl Rect {
+    /// Constructs a new rectange.
+    ///
+    /// # Arguments
+    /// * `left` - the left coordinate of the rectangle.
+    /// * `top` - the top coordinate of the rectangle.
+    /// * `width` - the width of the rectangle.
+    /// * `height` - the height of the rectangle.
+    ///
+    /// # Returns
+    /// Returns newly create rectangle.
+    pub fn new(
+        left: ::std::os::raw::c_int,
+        top: ::std::os::raw::c_int,
+        width: ::std::os::raw::c_int,
+        height: ::std::os::raw::c_int,
+    ) -> Self {
+        Self {
+            left,
+            top,
+            right: width,
+            bottom: height,
+        }
+    }
+
+    /// Sets the left coordinate of the rectangle.
+    ///
+    /// # Arguments
+    /// * `value` - the left coordinate of the rectangle.
+    ///
+    /// # Returns
+    /// Returns new instance of the rectangle with modified parameter.
+    pub fn left(mut self, value: ::std::os::raw::c_int) -> Self {
+        self.left = value;
+        self
+    }
+
+    /// Sets the top coordinate of the rectangle.
+    ///
+    /// # Arguments
+    /// * `value` - the top coordinate of the rectangle.
+    ///
+    /// # Returns
+    /// Returns new instance of the rectangle with modified parameter.
+    pub fn top(mut self, value: ::std::os::raw::c_int) -> Self {
+        self.top = value;
+        self
+    }
+
+    /// Sets the right coordinate of the rectangle.
+    ///
+    /// # Arguments
+    /// * `value` - the right coordinate of the rectangle.
+    ///
+    /// # Returns
+    /// Returns new instance of the rectangle with modified parameter.
+    pub fn right(mut self, value: ::std::os::raw::c_int) -> Self {
+        self.right = value;
+        self
+    }
+
+    /// Sets the bottom coordinate of the rectangle.
+    ///
+    /// # Arguments
+    /// * `value` - the bottom coordinate of the rectangle.
+    ///
+    /// # Returns
+    /// Returns new instance of the rectangle with modified parameter.
+    pub fn bottom(mut self, value: ::std::os::raw::c_int) -> Self {
+        self.bottom = value;
+        self
+    }
+}
+
 /// Window identifier.
 pub struct WindowId(xplm_sys::XPLMWindowID);
 
@@ -57,18 +140,18 @@ impl TryFrom<xplm_sys::XPLMMouseStatus> for MouseStatus {
 }
 
 /// Result returned from [`WindowHandler::mouse_click`] function.
-pub enum EventStatus {
+pub enum EventState {
     /// Consume click.
     Consume,
     /// Propagate click to other consumers.
     Propagate,
 }
 
-impl From<EventStatus> for ::std::os::raw::c_int {
-    fn from(value: EventStatus) -> Self {
+impl From<EventState> for ::std::os::raw::c_int {
+    fn from(value: EventState) -> Self {
         match value {
-            EventStatus::Consume => 1,
-            EventStatus::Propagate => 0,
+            EventState::Consume => 1,
+            EventState::Propagate => 0,
         }
     }
 }
@@ -127,19 +210,24 @@ pub trait WindowHandler: 'static {
     /// - When the user clicks the mouse button down.
     /// - (optionally) when the user drags the mouse after a down-click, but before the up-click
     /// - When the user releases the down-clicked mouse button.
-    fn mouse_click(&mut self, x: i32, y: i32, status: MouseStatus) -> EventStatus;
+    fn mouse_click(
+        &mut self,
+        x: ::std::os::raw::c_int,
+        y: ::std::os::raw::c_int,
+        status: MouseStatus,
+    ) -> EventState;
     /// This function is called when a key is pressed or keyboard focus is taken away from your window.
     fn handle_key(&mut self, key: char, virtual_key: VirtualKey, flags: KeyFlags);
     /// Get's called when the mouse is over the plugin window.
-    fn handle_cursor(&mut self, x: i32, y: i32);
+    fn handle_cursor(&mut self, x: ::std::os::raw::c_int, y: ::std::os::raw::c_int);
     /// Get's called when one of the mouse wheels is scrolled within the window.
     fn handle_mouse_wheel(
         &mut self,
-        x: i32,
-        y: i32,
+        x: ::std::os::raw::c_int,
+        y: ::std::os::raw::c_int,
         wheel_axis: WheelAxis,
         clicks: i32,
-    ) -> EventStatus;
+    ) -> EventState;
 }
 
 /// A link to [`WindowHandler`] for a given window.
@@ -170,13 +258,7 @@ impl Drop for WindowHandlerRecord {
 ///
 /// # Returns
 /// Returns [`WindowHandlerRecord`] on success. Otherwise returns [`DisplayError::InvalidWindowId`];
-pub fn create_window_ex<H: WindowHandler>(
-    left: u32,
-    top: u32,
-    right: u32,
-    bottom: u32,
-    handler: H,
-) -> Result<WindowHandlerRecord> {
+pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<WindowHandlerRecord> {
     unsafe extern "C" fn draw_window(
         _: xplm_sys::XPLMWindowID,
         refcon: *mut ::std::os::raw::c_void,
@@ -199,7 +281,7 @@ pub fn create_window_ex<H: WindowHandler>(
             }
             Err(err) => {
                 crate::error!("{}", err);
-                EventStatus::Propagate.into()
+                EventState::Propagate.into()
             }
         }
     }
@@ -252,7 +334,7 @@ pub fn create_window_ex<H: WindowHandler>(
                 .into(),
             Err(err) => {
                 crate::error!("{}", err);
-                EventStatus::Propagate.into()
+                EventState::Propagate.into()
             }
         }
     }
@@ -264,10 +346,10 @@ pub fn create_window_ex<H: WindowHandler>(
     let link_ptr: *mut WindowLink = link.deref_mut();
     let mut params = xplm_sys::XPLMCreateWindow_t {
         structSize: std::mem::size_of::<xplm_sys::XPLMCreateWindow_t>() as _,
-        left: left as _,
-        top: top as _,
-        right: right as _,
-        bottom: bottom as _,
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
         visible: 0,
         drawWindowFunc: Some(draw_window),
         handleMouseClickFunc: Some(mouse_click),
