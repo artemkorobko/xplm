@@ -2,6 +2,7 @@ pub mod error;
 pub mod feature;
 pub mod id;
 pub mod info;
+pub mod message;
 
 use std::{ffi, ops::Deref};
 
@@ -9,13 +10,14 @@ pub use self::error::PluginError;
 pub use self::feature::Feature;
 pub use self::id::PluginId;
 pub use self::info::PluginInfo;
+pub use self::message::AsMessageParam;
 
 pub type Result<T> = std::result::Result<T, PluginError>;
 
 /// Returns the plugin ID of the calling plug-in. Call this to get your own ID.
 ///
 /// # Returns
-/// Returns [`PluginId`] in case of success. Otherwise returns [`PluginError::InvalidId`].
+/// Returns [`PluginId`] in case of success. Otherwise returns [`PluginError`].
 pub fn get_my_id() -> Result<PluginId> {
     let id = unsafe { xplm_sys::XPLMGetMyID() };
     PluginId::try_from(id)
@@ -32,7 +34,7 @@ pub fn count_plugins() -> usize {
 /// * `index` - 0 based index from 0 to [`count_plugins`]-1, inclusive.
 ///
 /// # Returns
-/// Returns [`PluginId`] in case of success. Otherwise returns [`PluginError::InvalidId`].
+/// Returns [`PluginId`] in case of success. Otherwise returns [`PluginError`].
 pub fn get_nth_plugin(index: usize) -> Result<PluginId> {
     let id = unsafe { xplm_sys::XPLMGetNthPlugin(index as i32) };
     PluginId::try_from(id)
@@ -80,9 +82,7 @@ pub fn find_plugin_by_signature<T: Into<String>>(signature: T) -> Result<PluginI
 /// * `id` - the plugin identifier. See [`PluginId`].
 ///
 /// # Returns
-/// Returns [`PluginInfo`] in case of success.
-/// Otherwise returns [`PluginError::InvalidInputString`] if at leat one of
-/// the [`PluginInfo`] fields contains invalid character.
+/// Returns [`PluginInfo`] in case of success. Otherwise returns [`PluginError`].
 pub fn get_plugin_info(id: &PluginId) -> Result<PluginInfo> {
     let (name, file_path, signature, description) = unsafe {
         const BUF_LEN: usize = 256;
@@ -130,7 +130,10 @@ pub fn get_plugin_info(id: &PluginId) -> Result<PluginInfo> {
 /// Returns whether the specified plug-in is enabled for running.
 ///
 /// # Arguments
-/// * `id` - the plugin identifier. See [`PluginId`].
+/// * `id` - the plugin identifier.
+///
+/// # Returns
+/// Return `true` in case the plugin is enabled. Otherwise returns `false`.
 pub fn is_plugin_enabled(id: &PluginId) -> bool {
     unsafe { xplm_sys::XPLMIsPluginEnabled(*id.deref()) == 1 }
 }
@@ -139,11 +142,10 @@ pub fn is_plugin_enabled(id: &PluginId) -> bool {
 /// (for example, if resources cannot be acquired) by returning 0 from their XPluginEnable callback.
 ///
 /// # Arguments
-/// * `id` - the plugin identifier. See [`PluginId`].
+/// * `id` - the plugin identifier.
 ///
 /// # Returns
 /// Returns `true` if the plugin was enabled or successfully enables itself. Otherwise returns `false`.
-///
 pub fn enable_plugin(id: &PluginId) -> bool {
     unsafe { xplm_sys::XPLMEnablePlugin(*id.deref()) == 1 }
 }
@@ -161,27 +163,13 @@ pub fn reload_plugins() {
     unsafe { xplm_sys::XPLMReloadPlugins() };
 }
 
-/// A trait which declares convertion to message parameter.
-pub trait AsMessageParam {
-    /// Return the memory pointer to the message parameter.
-    fn as_message_param(&self) -> *mut ::std::os::raw::c_void;
-}
-
-/// A message parameter that gets ignored when sending messages.
-pub struct NoMessageParam;
-
-impl AsMessageParam for NoMessageParam {
-    fn as_message_param(&self) -> *mut std::os::raw::c_void {
-        std::ptr::null_mut()
-    }
-}
-
 /// Sends a message to another plug-in or X-Plane. Only enabled plug-ins with a message
 /// receive function receive the message.
 ///
 /// # Arguments
-/// * `id` - the plugin identifier. See [`PluginId`].
+/// * `id` - the plugin identifier.
 /// * `message` - the unique message identifier.
+/// * `param` - the message param.
 pub fn send_message_to_plugin<P: AsMessageParam>(id: &PluginId, message: i32, param: P) {
     unsafe { xplm_sys::XPLMSendMessageToPlugin(*id.deref(), message, param.as_message_param()) };
 }
@@ -191,6 +179,7 @@ pub fn send_message_to_plugin<P: AsMessageParam>(id: &PluginId, message: i32, pa
 ///
 /// # Arguments
 /// * `message` - the unique message identifier.
+/// * `param` - the message param.
 pub fn send_message_to_all_plugins<P: AsMessageParam>(message: i32, param: P) {
     unsafe {
         xplm_sys::XPLMSendMessageToPlugin(
