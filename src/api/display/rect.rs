@@ -1,7 +1,7 @@
 /// Rectangle native type.
 pub type RectCoordType = ::std::os::raw::c_int;
 
-/// A simple rectangle representation.
+/// X-Plane 2D rectangle definiton.
 #[derive(Default)]
 pub struct Rect {
     /// The left coordinate.

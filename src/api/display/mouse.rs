@@ -1,9 +1,12 @@
 use super::DisplayError;
 
-/// Mouse status passed in [`WindowHandler::mouse_click`].
+/// The mouse status.
 pub enum MouseStatus {
+    /// The mouse button is up.
     Up,
+    /// The mouse button is down.
     Down,
+    /// The mouse started drag move.
     Drag,
 }
 
@@ -22,7 +25,9 @@ impl TryFrom<xplm_sys::XPLMMouseStatus> for MouseStatus {
 
 /// The mouse wheel axis.
 pub enum WheelAxis {
+    /// Vertical mouse wheel axis.
     Vertical,
+    /// Horizontal mouse wheel axis.
     Horizontal,
 }
 

@@ -1,16 +1,13 @@
-/// Result returned from [`WindowHandler::mouse_click`] function.
+/// Event propagation state function.
 pub enum EventState {
     /// Consume click.
-    Consume,
+    Consume = 1,
     /// Propagate click to other consumers.
-    Propagate,
+    Propagate = 0,
 }
 
 impl From<EventState> for ::std::os::raw::c_int {
     fn from(value: EventState) -> Self {
-        match value {
-            EventState::Consume => 1,
-            EventState::Propagate => 0,
-        }
+        value as ::std::os::raw::c_int
     }
 }

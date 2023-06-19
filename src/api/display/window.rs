@@ -4,7 +4,7 @@ use crate::api::utilities::VirtualKey;
 
 use super::{destroy_window, Coord, DisplayError, EventState, KeyFlags, MouseStatus, WheelAxis};
 
-/// Window identifier.
+/// X-Plane window identifier.
 pub struct WindowId(xplm_sys::XPLMWindowID);
 
 impl Deref for WindowId {
@@ -27,20 +27,48 @@ impl TryFrom<xplm_sys::XPLMWindowID> for WindowId {
     }
 }
 
-/// Window handler
+/// Window handler trait.
 pub trait WindowHandler: 'static {
     /// A callback to handle 2-D drawing of a window.
     fn draw(&mut self);
+
     /// A callback for one of three events:
     /// - When the user clicks the mouse button down.
-    /// - (optionally) when the user drags the mouse after a down-click, but before the up-click
+    /// - (optionally) when the user drags the mouse after a down-click, but before the up-click.
     /// - When the user releases the down-clicked mouse button.
+    ///
+    /// # Arguments
+    /// * `coord` - coordinates at which mouse event occured.
+    /// * `status` - the mouse status.
+    ///
+    /// # Returns
+    /// Returns an event state telling X-Plane what to do with this event.
     fn mouse_click(&mut self, coord: Coord, status: MouseStatus) -> EventState;
+
     /// This function is called when a key is pressed or keyboard focus is taken away from your window.
+    ///
+    /// # Arguments
+    /// * `key` - the key character which has been pressed or released.
+    /// * `virtual_key` - the virtual key which has been pressed or released.
+    /// * `flags` - the key flags bitmap which contains state for special keys and wether the key
+    /// has been pressed or released.
     fn handle_key(&mut self, key: char, virtual_key: VirtualKey, flags: KeyFlags);
+
     /// Get's called when the mouse is over the plugin window.
+    ///
+    /// # Arguments
+    /// * `coord` - coordinates at which cursor event occured.
     fn handle_cursor(&mut self, coord: Coord);
+
     /// Get's called when one of the mouse wheels is scrolled within the window.
+    ///
+    /// # Arguments
+    /// * `coord` - coordinates at which mouse event occured.
+    /// * `wheel_axis` - the direction of wheel axis.
+    /// * `clicks` - number of clicks wheel performed after the last event.
+    ///
+    /// # Returns
+    /// Returns an event state telling X-Plane what to do with this event.
     fn handle_mouse_wheel(
         &mut self,
         coord: Coord,
@@ -53,13 +81,13 @@ pub trait WindowHandler: 'static {
 pub struct WindowLink(Box<dyn WindowHandler>);
 
 impl WindowLink {
-    /// Created a new [`WindowLink`] instance.
+    /// Creates a new [`WindowLink`] instance.
     ///
     /// # Arguments
     /// * `value` - a pointer to the [`WindowHandler`] instance.
     ///
     /// # Returns
-    /// Return the [`WindowLink`] instance.
+    /// Return the window link instance.
     pub fn new(value: Box<dyn WindowHandler>) -> Self {
         Self(value)
     }
@@ -94,21 +122,23 @@ impl WindowHandler for WindowLink {
 
 /// A window handler record to keep a window alive.
 pub struct WindowHandlerRecord {
-    id: WindowId,
-    _link: Box<WindowLink>,
+    /// A window identifier.
+    pub id: WindowId,
+    /// A window link to event handler.
+    pub link: Box<WindowLink>,
 }
 
 impl WindowHandlerRecord {
-    /// Creates a new [`WindowHandlerRecord`] instance.
+    /// Creates a new window handler record instance.
     ///
     /// # Arguments
-    /// * `id` - the window identifier. See [`WindowId`] for more details.
-    /// * `link` - a pointer to the window link. See [`WindowLink`] for more details.
+    /// * `id` - the window identifier.
+    /// * `link` - a pointer to the window link.
     ///
     /// # Return
-    /// Return the new [`WindowHandlerRecord`] instance.
+    /// Return the new window handler record instance.
     pub fn new(id: WindowId, link: Box<WindowLink>) -> Self {
-        Self { id, _link: link }
+        Self { id, link }
     }
 }
 

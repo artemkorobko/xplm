@@ -1,4 +1,4 @@
-/// Modifier keys.
+/// Modifier key variants.
 pub enum KeyFlag {
     Shift,
     OptionAlt,
@@ -7,14 +7,14 @@ pub enum KeyFlag {
     Up,
 }
 
-/// Key flags bitmap.
+/// Modifier key flags bitmap.
 pub struct KeyFlags(xplm_sys::XPLMKeyFlags);
 
 impl KeyFlags {
-    /// Checks whether flags contains the specific flag.
+    /// Checks whether the flags bitmap contains a specific flag.
     ///
     /// # Arguments
-    /// * `flag` - the flag to check.
+    /// * `flag` - a flag to check.
     ///
     /// # Returns
     /// Return `true` if flags contains specific flag. Otherwise returns `false`.
@@ -28,7 +28,7 @@ impl KeyFlags {
         }
     }
 
-    /// Checks whether flags contains shift flag.
+    /// Checks whether the flags bitmsap contains shift flag.
     ///
     /// # Returns
     /// Return `true` if flags contains shift. Otherwise returns `false`.
@@ -36,7 +36,7 @@ impl KeyFlags {
         self.0 & (xplm_sys::xplm_ShiftFlag as xplm_sys::XPLMKeyFlags) != 0
     }
 
-    /// Checks whether flags contains option or alt flag.
+    /// Checks whether the flags bitmap contains option or alt flag.
     ///
     /// # Returns
     /// Return `true` if flags contains option or alt. Otherwise returns `false`.
@@ -44,7 +44,7 @@ impl KeyFlags {
         self.0 & (xplm_sys::xplm_OptionAltFlag as xplm_sys::XPLMKeyFlags) != 0
     }
 
-    /// Checks whether flags contains control flag.
+    /// Checks whether the flags bitmap contains control flag.
     ///
     /// # Returns
     /// Return `true` if flags contains control. Otherwise returns `false`.
@@ -52,7 +52,7 @@ impl KeyFlags {
         self.0 & (xplm_sys::xplm_OptionAltFlag as xplm_sys::XPLMKeyFlags) != 0
     }
 
-    /// Checks whether flags contains down flag.
+    /// Checks whether the flags bitmap contains down flag.
     ///
     /// # Returns
     /// Return `true` if flags contains down. Otherwise returns `false`.
@@ -60,7 +60,7 @@ impl KeyFlags {
         self.0 & (xplm_sys::xplm_DownFlag as xplm_sys::XPLMKeyFlags) != 0
     }
 
-    /// Checks whether flags contains up flag.
+    /// Checks whether the flags bitmap contains up flag.
     ///
     /// # Returns
     /// Return `true` if flags contains up. Otherwise returns `false`.

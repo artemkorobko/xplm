@@ -25,11 +25,11 @@ pub type Result<T> = std::result::Result<T, DisplayError>;
 /// This routine creates a new “modern” window.
 ///
 /// # Arguments
-/// * `rect` - window rectangle.
-/// * `hanndler` - window events handler.
+/// * `rect` - window rectangle. See [`Rect`] for more details.
+/// * `handler` - window events handler. See [`WindowHandler`] for more details.
 ///
 /// # Returns
-/// Returns [`WindowHandlerRecord`] on success. Otherwise returns [`DisplayError::InvalidWindowId`];
+/// Returns [`WindowHandlerRecord`] on success. Otherwise returns [`DisplayError`].
 pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<WindowHandlerRecord> {
     unsafe extern "C" fn draw_window(
         _: xplm_sys::XPLMWindowID,
@@ -138,7 +138,7 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
 /// Destroys a window.
 ///
 /// # Arguments
-/// * `id` - a window identifier.
+/// * `id` - a window identifier. See [`WindowId`] for more details.
 pub fn destroy_window(id: &WindowId) {
     unsafe { xplm_sys::XPLMDestroyWindow(*id.deref()) };
 }
