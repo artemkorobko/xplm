@@ -10,7 +10,7 @@ use std::{ffi, ops::DerefMut, path, str, sync::OnceLock};
 
 pub use self::app::{HostApplicationId, Versions};
 pub use self::command::Command;
-use self::command::{CommandExecutionTime, CommandHandler, CommandHandlerRecord, CommandLink};
+pub use self::command::{CommandExecutionTime, CommandHandler, CommandHandlerRecord, CommandLink};
 pub use self::error::UtilitiesError;
 pub use self::file::DataFileType;
 pub use self::key::VirtualKey;
