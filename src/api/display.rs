@@ -186,3 +186,30 @@ pub fn get_mouse_location_global() -> Coord {
     unsafe { xplm_sys::XPLMGetMouseLocationGlobal(&mut x, &mut y) };
     Coord::default().x(x).y(y)
 }
+
+/// Returns the position and size of a window.
+/// The units and coordinate system vary depending on the type of window you have.
+///
+/// If this is a legacy window (one compiled against a pre-XPLM300 version of the SDK,
+/// or an XPLM300 window that was not created using [`create_window_ex`]), the units are
+/// pixels relative to the main X-Plane display.
+///
+/// If, on the other hand, this is a new X-Plane 11-style window (compiled against the
+/// XPLM300 SDK and created using [`create_window_ex`]), the units are global desktop boxels.
+///
+/// # Returns
+/// Returns the bounding rect on a window.
+pub fn get_window_geometry(id: &WindowId) -> Rect {
+    let mut left = 0;
+    let mut top = 0;
+    let mut right = 0;
+    let mut bottom = 0;
+    unsafe {
+        xplm_sys::XPLMGetWindowGeometry(*id.deref(), &mut left, &mut top, &mut right, &mut bottom)
+    };
+    Rect::default()
+        .left(left)
+        .top(top)
+        .right(right)
+        .bottom(bottom)
+}
