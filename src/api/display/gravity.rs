@@ -1,20 +1,17 @@
-/// Rectangle native type.
-pub type RectCoordType = ::std::os::raw::c_int;
-
 /// X-Plane 2D rectangle definiton.
 #[derive(Default)]
-pub struct Rect {
+pub struct GravityRect {
     /// The left coordinate.
-    pub left: RectCoordType,
+    pub left: f32,
     /// The top coordinate.
-    pub top: RectCoordType,
+    pub top: f32,
     /// The right coordinate.
-    pub right: RectCoordType,
+    pub right: f32,
     /// The bottom coordinate.
-    pub bottom: RectCoordType,
+    pub bottom: f32,
 }
 
-impl Rect {
+impl GravityRect {
     /// Constructs a new rectange.
     ///
     /// # Arguments
@@ -25,12 +22,7 @@ impl Rect {
     ///
     /// # Returns
     /// Returns newly create rectangle.
-    pub fn new(
-        left: RectCoordType,
-        top: RectCoordType,
-        right: RectCoordType,
-        bottom: RectCoordType,
-    ) -> Self {
+    pub fn new(left: f32, top: f32, right: f32, bottom: f32) -> Self {
         Self {
             left,
             top,
@@ -46,7 +38,7 @@ impl Rect {
     ///
     /// # Returns
     /// Returns new instance of the rectangle with modified parameter.
-    pub fn left(mut self, value: RectCoordType) -> Self {
+    pub fn left(mut self, value: f32) -> Self {
         self.left = value;
         self
     }
@@ -58,7 +50,7 @@ impl Rect {
     ///
     /// # Returns
     /// Returns new instance of the rectangle with modified parameter.
-    pub fn top(mut self, value: RectCoordType) -> Self {
+    pub fn top(mut self, value: f32) -> Self {
         self.top = value;
         self
     }
@@ -70,7 +62,7 @@ impl Rect {
     ///
     /// # Returns
     /// Returns new instance of the rectangle with modified parameter.
-    pub fn right(mut self, value: RectCoordType) -> Self {
+    pub fn right(mut self, value: f32) -> Self {
         self.right = value;
         self
     }
@@ -82,7 +74,7 @@ impl Rect {
     ///
     /// # Returns
     /// Returns new instance of the rectangle with modified parameter.
-    pub fn bottom(mut self, value: RectCoordType) -> Self {
+    pub fn bottom(mut self, value: f32) -> Self {
         self.bottom = value;
         self
     }

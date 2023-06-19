@@ -1,6 +1,7 @@
 pub mod coord;
 pub mod error;
 pub mod event;
+pub mod gravity;
 pub mod key;
 pub mod mouse;
 pub mod rect;
@@ -12,6 +13,7 @@ use std::ops::{Deref, DerefMut};
 pub use self::coord::Coord;
 pub use self::error::DisplayError;
 pub use self::event::EventState;
+use self::gravity::GravityRect;
 pub use self::key::KeyFlags;
 pub use self::mouse::{MouseStatus, WheelAxis};
 pub use self::rect::Rect;
@@ -296,14 +298,29 @@ pub fn set_window_hidden(id: &WindowId) {
     unsafe { xplm_sys::XPLMSetWindowIsVisible(*id.deref(), 0) };
 }
 
-
 /// Checks wether a window is poppet-out.
-/// 
+///
 /// # Arguments
 /// * `id` - a window identifier
-/// 
+///
 /// # Returns
 /// Returns `true` is window is popped-out. Otherwise returns `false`.
 pub fn is_window_popped_out(id: &WindowId) -> bool {
     unsafe { xplm_sys::XPLMWindowIsPoppedOut(*id.deref()) == 1 }
+}
+
+/// A window's “gravity” controls how the window shifts as the whole X-Plane window resizes.
+/// A gravity of 1 means the window maintains its positioning relative to the right or top edges,
+/// 0 the left/bottom, and 0.5 keeps it centered.
+///
+/// Default gravity is (0, 1, 0, 1), meaning your window will maintain its position relative to the
+/// top left and will not change size as its containing window grows.
+///
+/// # Arguments
+/// * `id` - a window identifier
+/// * `rect` - a gravity options.
+pub fn set_window_gravity(id: &WindowId, rect: &GravityRect) {
+    unsafe {
+        xplm_sys::XPLMSetWindowGravity(*id.deref(), rect.left, rect.top, rect.right, rect.bottom)
+    }
 }
