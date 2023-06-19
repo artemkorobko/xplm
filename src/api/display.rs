@@ -279,3 +279,19 @@ pub fn set_window_geometry_os(id: &WindowId, rect: &Rect) {
 pub fn get_window_is_visible(id: &WindowId) -> bool {
     unsafe { xplm_sys::XPLMGetWindowIsVisible(*id.deref()) == 1 }
 }
+
+/// Sets a window visible.
+///
+/// # Arguments
+/// * `id` - a window identifier
+pub fn set_window_visible(id: &WindowId) {
+    unsafe { xplm_sys::XPLMSetWindowIsVisible(*id.deref(), 1) };
+}
+
+/// Sets a window hidden.
+///
+/// # Arguments
+/// * `id` - a window identifier
+pub fn set_window_hidden(id: &WindowId) {
+    unsafe { xplm_sys::XPLMSetWindowIsVisible(*id.deref(), 0) };
+}
