@@ -268,3 +268,14 @@ pub fn set_window_geometry_os(id: &WindowId, rect: &Rect) {
         xplm_sys::XPLMSetWindowGeometryOS(*id.deref(), rect.left, rect.top, rect.right, rect.bottom)
     };
 }
+
+/// Check whether a specified window is visible or not.
+///
+/// # Arguments
+/// * `id` - a window identifier
+///
+/// # Returns
+/// Returns `true` if window is visible. Otherwise returns false.
+pub fn get_window_is_visible(id: &WindowId) -> bool {
+    unsafe { xplm_sys::XPLMGetWindowIsVisible(*id.deref()) == 1 }
+}
