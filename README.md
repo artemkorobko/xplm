@@ -19,6 +19,8 @@ supports X-Plane version defined in this library.
     - [ ] Drawing callbacks.
     - [ ] Avionics API.
     - [ ] Window API.
+    - [ ] Key Sniffers.
+    - [ ] Hot Keys.
 - [X] [XPLMUtilities](https://developer.x-plane.com/sdk/XPLMUtilities)
     - [X] Full and Relative Paths.  
     - [X] X-Plane Misc except `XPLMFindSymbol`.  

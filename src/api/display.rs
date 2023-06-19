@@ -4,6 +4,7 @@ pub mod event;
 pub mod key;
 pub mod mouse;
 pub mod rect;
+pub mod size;
 pub mod window;
 
 use std::ops::{Deref, DerefMut};
@@ -14,6 +15,7 @@ pub use self::event::EventState;
 pub use self::key::KeyFlags;
 pub use self::mouse::{MouseStatus, WheelAxis};
 pub use self::rect::Rect;
+pub use self::size::Size;
 pub use self::window::{WindowHandler, WindowHandlerRecord, WindowLink};
 
 use crate::api::display::window::WindowId;
@@ -141,4 +143,17 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
 /// * `id` - a window identifier. See [`WindowId`] for more details.
 pub fn destroy_window(id: &WindowId) {
     unsafe { xplm_sys::XPLMDestroyWindow(*id.deref()) };
+}
+
+/// Returns the size of the main X-Plane OpenGL window in pixels.
+/// This number can be used to get a rough idea of the amount of
+/// detail the user will be able to see when drawing in 3D.
+///
+/// # Returns
+/// Returns the size of the main X-Plane OpenGL window.
+pub fn get_screen_size() -> Size {
+    let mut width = 0;
+    let mut height = 0;
+    unsafe { xplm_sys::XPLMGetScreenSize(&mut width, &mut height) };
+    Size::default().width(width).height(height)
 }
