@@ -317,10 +317,28 @@ pub fn is_window_popped_out(id: &WindowId) -> bool {
 /// top left and will not change size as its containing window grows.
 ///
 /// # Arguments
-/// * `id` - a window identifier
+/// * `id` - a window identifier.
 /// * `rect` - a gravity options.
 pub fn set_window_gravity(id: &WindowId, rect: &GravityRect) {
     unsafe {
         xplm_sys::XPLMSetWindowGravity(*id.deref(), rect.left, rect.top, rect.right, rect.bottom)
     }
+}
+
+/// Sets the minimum and maximum size of the client rectangle of the given window.
+///
+/// # Arguments
+/// * `id` - a window identifier.
+/// * `min` - a minimum size of a window.
+/// * `max` - a maximum size of a window.
+pub fn set_window_resizing_limits(id: &WindowId, min: &Size, max: &Size) {
+    unsafe {
+        xplm_sys::XPLMSetWindowResizingLimits(
+            *id.deref(),
+            min.width,
+            min.height,
+            max.width,
+            max.height,
+        )
+    };
 }
