@@ -5,7 +5,10 @@ pub mod info;
 
 use std::{ffi, ops::Deref};
 
-pub use self::{error::PluginError, feature::Feature, id::PluginId, info::PluginInfo};
+pub use self::error::PluginError;
+pub use self::feature::Feature;
+pub use self::id::PluginId;
+pub use self::info::PluginInfo;
 
 pub type Result<T> = std::result::Result<T, PluginError>;
 

@@ -6,8 +6,8 @@ use std::{ffi, ops::Deref};
 
 pub use self::error::MenusError;
 pub use self::menu::MenuId;
-use self::menu::MenuItemId;
-use self::state::MenuItemState;
+pub use self::menu::MenuItemId;
+pub use self::state::MenuItemState;
 
 use super::utilities::Command;
 
