@@ -402,3 +402,13 @@ pub fn remove_keyboard_focus() {
 pub fn has_keyboard_focus(id: &WindowId) -> bool {
     unsafe { xplm_sys::XPLMHasKeyboardFocus(*id.deref()) == 1 }
 }
+
+/// Brings the window to the front of the Z-order for its layer.
+/// Windows are brought to the front automatically when they are created.
+/// Beyond that, you should make sure you are front before handling mouse clicks.
+///
+/// # Arguments
+/// * `id` - a window identifier.
+pub fn bring_window_to_front(id: &WindowId) {
+    unsafe { xplm_sys::XPLMBringWindowToFront(*id.deref()) };
+}
