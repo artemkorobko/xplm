@@ -1,3 +1,8 @@
+pub mod app;
+pub mod error;
+pub mod file;
+pub mod lang;
+
 use std::{
     ffi,
     ops::{Deref, DerefMut},
@@ -5,55 +10,11 @@ use std::{
     sync::OnceLock,
 };
 
-/// An error returned from utilities API calls
-#[derive(thiserror::Error, Debug)]
-pub enum UtilitiesError {
-    /// Invalid system path string returned from X-Plane
-    #[error("invalid system path {0}")]
-    InvalidSystemPath(ffi::IntoStringError),
-    /// Invalid preferences path string returned from X-Plane
-    #[error("invalid preferences path {0}")]
-    InvalidPrefsPath(ffi::IntoStringError),
-    /// Invalid directory separator returned from X-Plane
-    #[error("invalid directory separator {0}")]
-    InvalidDirectorySeparator(str::Utf8Error),
-    /// Sirectory separator is empty
-    #[error("empty directory separator")]
-    EmptyDirectorySeparator,
-    /// Invalid data file path string passed to X-Plane
-    #[error("invalid system path")]
-    InvalidDataFilePath(ffi::NulError),
-    /// Unable to load data file
-    #[error("unable to load data file")]
-    LoadDataFile,
-    /// Unable to load data file
-    #[error("unable to clear replay")]
-    ClearReplay,
-    /// Unable to save data file
-    #[error("unable to save data file")]
-    SaveDataFile,
-    /// Unknown host application id
-    #[error("unknown host application id {0}")]
-    UnknownHostApplicationId(xplm_sys::XPLMHostApplicationID),
-    /// Unknown language code
-    #[error("unknown language code {0}")]
-    UnknownLanguageCode(xplm_sys::XPLMLanguageCode),
-    /// Invalid virtual key returned from X-Plane
-    #[error("invalid virtual key {0}")]
-    InvalidVirtualKey(::std::os::raw::c_char),
-    /// Invalid virtual key description string returned from X-Plane
-    #[error("invalid virtual key description {0}")]
-    InvalidVirtualKeyDescription(ffi::IntoStringError),
-    /// Invalid command reference
-    #[error("invalid command reference")]
-    InvalidCommand,
-    /// Invalid command name string passed to X-Plane
-    #[error("invalid command name {0}")]
-    InvalidCommandName(ffi::NulError),
-    /// Invalid command description string passed to X-Plane
-    #[error("invalid command description {0}")]
-    InvalidCommandDescription(ffi::NulError),
-}
+pub use self::error::UtilitiesError;
+use self::{
+    app::{HostApplicationId, Versions},
+    file::DataFileType,
+};
 
 pub type Result<T> = std::result::Result<T, UtilitiesError>;
 
@@ -99,15 +60,6 @@ pub fn get_directory_separator() -> Result<char> {
         .chars()
         .next()
         .ok_or(UtilitiesError::EmptyDirectorySeparator)
-}
-
-/// Types of data files you can load or unload using the SDK.
-#[repr(u32)]
-pub enum DataFileType {
-    /// A situation (.sit) file, which starts off a flight in a given configuration.
-    Situation = xplm_sys::xplm_DataFile_Situation,
-    /// A situation movie (.smo) file, which replays a past flight.
-    ReplayMovie = xplm_sys::xplm_DataFile_ReplayMovie,
 }
 
 /// Loads a data file of a given type.
@@ -191,39 +143,7 @@ pub fn save_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
     }
 }
 
-/// While the plug-in SDK is only accessible to plugins running inside X-Plane,
-/// the original authors considered extending the API to other applications that
-/// shared basic infrastructure with X-Plane. These enumerations are hold-overs
-/// from that original roadmap; all values other than X-Plane are deprecated.
-/// Your plugin should never need this enumeration.
-pub enum HostApplicationId {
-    Unknown,
-    XPlane,
-}
-
-impl TryFrom<xplm_sys::XPLMHostApplicationID> for HostApplicationId {
-    type Error = UtilitiesError;
-
-    fn try_from(value: xplm_sys::XPLMHostApplicationID) -> std::result::Result<Self, Self::Error> {
-        match value as ::std::os::raw::c_uint {
-            xplm_sys::xplm_Host_Unknown => Ok(Self::Unknown),
-            xplm_sys::xplm_Host_XPlane => Ok(Self::XPlane),
-            _ => Err(Self::Error::UnknownHostApplicationId(value)),
-        }
-    }
-}
-
-/// X-Plane and XPLM versions.
-pub struct Versions {
-    /// Host ID of the app running the plugin.
-    pub app_id: HostApplicationId,
-    /// X-Plane version.
-    pub xplane: i32,
-    /// XPLM version.
-    pub xplm: i32,
-}
-
-/// returns the revision of both X-Plane and the XPLM DLL.
+/// Returns the revision of both X-Plane and the XPLM shared libraries.
 /// In addition returns the host ID of the app running the plugin.
 ///
 /// # Returns
