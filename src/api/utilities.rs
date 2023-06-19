@@ -1,17 +1,15 @@
 pub mod app;
+pub mod command;
 pub mod error;
 pub mod file;
 pub mod key;
 pub mod lang;
 
-use std::{
-    ffi,
-    ops::{Deref, DerefMut},
-    path, str,
-    sync::OnceLock,
-};
+use std::ops::Deref;
+use std::{ffi, ops::DerefMut, path, str, sync::OnceLock};
 
 pub use self::app::{HostApplicationId, Versions};
+pub use self::command::Command;
 pub use self::error::UtilitiesError;
 pub use self::file::DataFileType;
 pub use self::key::VirtualKey;
@@ -254,29 +252,6 @@ pub fn reload_scenery() {
     unsafe { xplm_sys::XPLMReloadScenery() };
 }
 
-/// An opaque identifier for an X-Plane command
-pub struct Command(xplm_sys::XPLMCommandRef);
-
-impl TryFrom<xplm_sys::XPLMCommandRef> for Command {
-    type Error = UtilitiesError;
-
-    fn try_from(value: xplm_sys::XPLMCommandRef) -> std::result::Result<Self, Self::Error> {
-        if value.is_null() {
-            Err(Self::Error::InvalidCommand)
-        } else {
-            Ok(Command(value))
-        }
-    }
-}
-
-impl Deref for Command {
-    type Target = xplm_sys::XPLMCommandRef;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 /// Looks up a command by name.
 ///
 /// # Arguments
@@ -301,7 +276,7 @@ pub fn find_command<T: Into<String>>(name: T) -> Result<Option<Command>> {
 /// # Arguments
 /// * `command` - the [`Command`] to begin execution of.
 pub fn command_begin(command: &Command) {
-    unsafe { xplm_sys::XPLMCommandBegin(command.0) };
+    unsafe { xplm_sys::XPLMCommandBegin(*command.deref()) };
 }
 
 /// Ends the execution of a given command that was previously started.
@@ -309,7 +284,7 @@ pub fn command_begin(command: &Command) {
 /// # Arguments
 /// * `command` - the [`Command`] to end execution of.
 pub fn command_end(command: &Command) {
-    unsafe { xplm_sys::XPLMCommandEnd(command.0) };
+    unsafe { xplm_sys::XPLMCommandEnd(*command.deref()) };
 }
 
 /// Executes a given command momentarily, that is, the command begins and ends immediately.
@@ -317,7 +292,7 @@ pub fn command_end(command: &Command) {
 /// # Arguments
 /// * `command` - the [`Command`] to execute.
 pub fn command_once(command: &Command) {
-    unsafe { xplm_sys::XPLMCommandOnce(command.0) };
+    unsafe { xplm_sys::XPLMCommandOnce(*command.deref()) };
 }
 
 /// Creates a new command for a given name and description.
@@ -395,7 +370,7 @@ pub fn register_command_handler<H: CommandHandler>(
     handler: H,
 ) -> CommandHandlerRecord {
     let mut link = Box::new(CommandLink {
-        command: command.0,
+        command: *command.deref(),
         handler: Box::new(handler),
     });
 
@@ -403,7 +378,7 @@ pub fn register_command_handler<H: CommandHandler>(
 
     unsafe {
         xplm_sys::XPLMRegisterCommandHandler(
-            command.0,
+            *command.deref(),
             Some(command_handler),
             execution_time as _,
             link_ptr as *mut _,
