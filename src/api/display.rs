@@ -18,6 +18,7 @@ pub use self::key::KeyFlags;
 pub use self::mouse::{MouseStatus, WheelAxis};
 pub use self::rect::Rect;
 pub use self::size::Size;
+pub use self::window::PositioningMode;
 pub use self::window::{WindowHandler, WindowHandlerRecord, WindowLink};
 
 use crate::api::display::window::WindowId;
@@ -341,4 +342,21 @@ pub fn set_window_resizing_limits(id: &WindowId, min: &Size, max: &Size) {
             max.height,
         )
     };
+}
+
+/// Sets the policy for how X-Plane will position your window.
+/// Some positioning modes apply to a particular monitor.
+/// For those modes, you can pass a negative monitor index to position
+/// the window on the main X-Plane monitor (the screen with the X-Plane menu bar at the top).
+///
+/// # Arguments
+/// * `id` - a window identifier.
+/// * `mode` - a positioning mode.
+/// * `monitor` - a monitor index. Specify 0 for default monitor.
+pub fn set_window_positioning_mode(
+    id: &WindowId,
+    mode: PositioningMode,
+    monitor: ::std::os::raw::c_int,
+) {
+    unsafe { xplm_sys::XPLMSetWindowPositioningMode(*id.deref(), mode.into(), monitor) };
 }

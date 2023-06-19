@@ -147,3 +147,28 @@ impl Drop for WindowHandlerRecord {
         destroy_window(&self.id)
     }
 }
+
+/// A window positioning mode.
+pub enum PositioningMode {
+    /// The default positioning mode. Set the window geometry and its
+    /// future position will be determined by its window gravity,
+    /// resizing limits, and user interactions.
+    Free = 0,
+    /// Keep the window centered on the monitor you specify.
+    CenterOnMonitor = 1,
+    /// Keep the window full screen on the monitor you specify.
+    FullScreenOnMonitor = 2,
+    /// Like `FullScreenOnMonitor`, but stretches over *all* monitors and popout windows.
+    /// This is an obscure one... unless you have a very good reason to need it, you probably don't!
+    FullScreenOnAllMonitors = 3,
+    /// A first-class window in the operating system, completely separate from the X-Plane window(s).
+    WindowPopOut = 4,
+    /// A floating window visible on the VR headset.
+    WindowVR = 5,
+}
+
+impl From<PositioningMode> for xplm_sys::XPLMWindowPositioningMode {
+    fn from(value: PositioningMode) -> Self {
+        value as xplm_sys::XPLMWindowPositioningMode
+    }
+}
