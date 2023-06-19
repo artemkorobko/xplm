@@ -1,9 +1,10 @@
 pub mod error;
 pub mod id;
+pub mod info;
 
 use std::{ffi, ops::Deref};
 
-use self::{error::PluginError, id::PluginId};
+use self::{error::PluginError, id::PluginId, info::PluginInfo};
 
 pub type Result<T> = std::result::Result<T, PluginError>;
 
@@ -67,18 +68,6 @@ pub fn find_plugin_by_signature<T: Into<String>>(signature: T) -> Result<PluginI
         ffi::CString::new(signature.into()).map_err(PluginError::InvalidPluginSignature)?;
     let id = unsafe { xplm_sys::XPLMFindPluginBySignature(string_c.as_ptr()) };
     PluginId::try_from(id)
-}
-
-/// A plugin info.
-pub struct PluginInfo {
-    /// A plugin name.
-    pub name: String,
-    /// An absolute file system path.
-    pub file_path: String,
-    /// A plugin signature.
-    pub signature: String,
-    /// A plugin description.
-    pub description: String,
 }
 
 /// Returns information about a plug-in.
