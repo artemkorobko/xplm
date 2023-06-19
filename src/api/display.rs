@@ -385,3 +385,9 @@ pub fn set_window_title<T: Into<String>>(id: &WindowId, title: T) -> Result<()> 
 pub fn take_keyboard_focus(id: &WindowId) {
     unsafe { xplm_sys::XPLMTakeKeyboardFocus(*id.deref()) };
 }
+
+/// Removes keyboard focus from any plugin-created windows and
+/// instead pass keyboard strokes directly to X-Plane.
+pub fn remove_keyboard_focus() {
+    unsafe { xplm_sys::XPLMTakeKeyboardFocus(0 as xplm_sys::XPLMWindowID) };
+}
