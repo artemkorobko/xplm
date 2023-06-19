@@ -391,3 +391,14 @@ pub fn take_keyboard_focus(id: &WindowId) {
 pub fn remove_keyboard_focus() {
     unsafe { xplm_sys::XPLMTakeKeyboardFocus(0 as xplm_sys::XPLMWindowID) };
 }
+
+/// Check wether a specified window has focus or not.
+///
+/// # Arguments
+/// * `id` - a window identifier.
+///
+/// # Returns
+/// Return `true` is specified window has focus. Otherwise returns `false`.
+pub fn has_keyboard_focus(id: &WindowId) -> bool {
+    unsafe { xplm_sys::XPLMHasKeyboardFocus(*id.deref()) == 1 }
+}
