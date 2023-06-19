@@ -31,8 +31,8 @@ pub type Result<T> = std::result::Result<T, DisplayError>;
 /// This routine creates a new “modern” window.
 ///
 /// # Arguments
-/// * `rect` - window rectangle. See [`Rect`] for more details.
-/// * `handler` - window events handler. See [`WindowHandler`] for more details.
+/// * `rect` - window rectangle.
+/// * `handler` - window events handler.
 ///
 /// # Returns
 /// Returns [`WindowHandlerRecord`] on success. Otherwise returns [`DisplayError`].
@@ -411,4 +411,15 @@ pub fn has_keyboard_focus(id: &WindowId) -> bool {
 /// * `id` - a window identifier.
 pub fn bring_window_to_front(id: &WindowId) {
     unsafe { xplm_sys::XPLMBringWindowToFront(*id.deref()) };
+}
+
+/// Check wether a given window in front or not.
+///
+/// # Arguments
+/// * `id` - a window identifier.
+///
+/// # Returns
+/// Returns `true` if specified window is in front. Otherwise returns `false`.
+pub fn is_window_in_front(id: &WindowId) -> bool {
+    unsafe { xplm_sys::XPLMIsWindowInFront(*id.deref()) == 1 }
 }
