@@ -157,3 +157,21 @@ pub fn get_screen_size() -> Size {
     unsafe { xplm_sys::XPLMGetScreenSize(&mut width, &mut height) };
     Size::default().width(width).height(height)
 }
+
+/// Returns the bounds of the “global” X-Plane desktop, in boxels.
+/// Unlike the non-global version [`get_screen_size`], this is multi-monitor aware.
+///
+/// # Returns
+/// Returns the bounds of the “global” X-Plane desktop.
+pub fn get_screen_bounds_global() -> Rect {
+    let mut left = 0;
+    let mut top = 0;
+    let mut right = 0;
+    let mut bottom = 0;
+    unsafe { xplm_sys::XPLMGetScreenBoundsGlobal(&mut left, &mut top, &mut right, &mut bottom) };
+    Rect::default()
+        .left(left)
+        .top(top)
+        .right(right)
+        .bottom(bottom)
+}
