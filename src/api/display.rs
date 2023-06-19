@@ -295,3 +295,15 @@ pub fn set_window_visible(id: &WindowId) {
 pub fn set_window_hidden(id: &WindowId) {
     unsafe { xplm_sys::XPLMSetWindowIsVisible(*id.deref(), 0) };
 }
+
+
+/// Checks wether a window is poppet-out.
+/// 
+/// # Arguments
+/// * `id` - a window identifier
+/// 
+/// # Returns
+/// Returns `true` is window is popped-out. Otherwise returns `false`.
+pub fn is_window_popped_out(id: &WindowId) -> bool {
+    unsafe { xplm_sys::XPLMWindowIsPoppedOut(*id.deref()) == 1 }
+}
