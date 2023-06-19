@@ -10,6 +10,7 @@ use std::{ffi, ops::DerefMut, path, str, sync::OnceLock};
 
 pub use self::app::{HostApplicationId, Versions};
 pub use self::command::Command;
+use self::command::{CommandExecutionTime, CommandHandler, CommandHandlerRecord, CommandLink};
 pub use self::error::UtilitiesError;
 pub use self::file::DataFileType;
 pub use self::key::VirtualKey;
@@ -317,43 +318,6 @@ where
     Command::try_from(command)
 }
 
-/// Command handler.
-pub trait CommandHandler: 'static {
-    /// Called when the command begins (corresponds to a button being pressed down)
-    fn command_begin(&mut self);
-    /// Called frequently while the command button is held down
-    fn command_continue(&mut self);
-    /// Called when the command ends (corresponds to a button being released)
-    fn command_end(&mut self);
-}
-
-/// A link to [`CommandHandler`] for a given [`Command`].
-pub struct CommandLink {
-    command: xplm_sys::XPLMCommandRef,
-    handler: Box<dyn CommandHandler>,
-}
-
-/// A command handler record to keep a registration alive.
-pub struct CommandHandlerRecord {
-    link: Box<CommandLink>,
-    execution_time: CommandExecutionTime,
-}
-
-impl Drop for CommandHandlerRecord {
-    fn drop(&mut self) {
-        unregister_command_handler(self);
-    }
-}
-
-/// A command execution time.
-#[derive(Copy, Clone)]
-pub enum CommandExecutionTime {
-    /// A callback will run before X-Plane.
-    BeforeXPlane = 1,
-    /// A callback will run after X-Plane.
-    AfterXPlane = 0,
-}
-
 /// Registers a callback to be called when a command is executed.
 ///
 /// # Arguments
@@ -399,12 +363,11 @@ unsafe extern "C" fn command_handler(
     const CONTINUE_EXECUTION: ::std::os::raw::c_int = 1;
     const TERMINATE_EXECUTION: ::std::os::raw::c_int = 1;
     let link = refcon as *mut CommandLink;
-    if (*link).command == command {
-        let handler = (*link).handler.deref_mut();
+    if (*link).links_with(command) {
         match phase as ::std::os::raw::c_uint {
-            xplm_sys::xplm_CommandBegin => (*handler).command_begin(),
-            xplm_sys::xplm_CommandContinue => (*handler).command_continue(),
-            xplm_sys::xplm_CommandEnd => (*handler).command_end(),
+            xplm_sys::xplm_CommandBegin => (*link).command_begin(),
+            xplm_sys::xplm_CommandContinue => (*link).command_continue(),
+            xplm_sys::xplm_CommandEnd => (*link).command_end(),
             _ => {}
         };
         TERMINATE_EXECUTION
@@ -421,7 +384,7 @@ pub fn unregister_command_handler(record: &mut CommandHandlerRecord) {
         xplm_sys::XPLMUnregisterCommandHandler(
             record.link.command,
             Some(command_handler),
-            record.execution_time as ::std::os::raw::c_int,
+            record.execution_time.into(),
             link_ptr as *mut ::std::os::raw::c_void,
         )
     };
