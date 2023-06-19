@@ -197,6 +197,9 @@ pub fn get_mouse_location_global() -> Coord {
 /// If, on the other hand, this is a new X-Plane 11-style window (compiled against the
 /// XPLM300 SDK and created using [`create_window_ex`]), the units are global desktop boxels.
 ///
+/// # Arguments
+/// * `id` - a window identifier.
+///
 /// # Returns
 /// Returns the bounding rect on a window.
 pub fn get_window_geometry(id: &WindowId) -> Rect {
@@ -230,4 +233,27 @@ pub fn set_window_geometry(id: &WindowId, rect: &Rect) {
     unsafe {
         xplm_sys::XPLMSetWindowGeometry(*id.deref(), rect.left, rect.top, rect.right, rect.bottom)
     };
+}
+
+/// This routine returns the position and size of a “popped out” window,
+/// in operating system pixels.
+///
+/// # Arguments
+/// * `id` - a window identifier.
+///
+/// # Returns
+/// Returns the bounding rect on a window.
+pub fn get_window_geometry_os(id: &WindowId) -> Rect {
+    let mut left = 0;
+    let mut top = 0;
+    let mut right = 0;
+    let mut bottom = 0;
+    unsafe {
+        xplm_sys::XPLMGetWindowGeometryOS(*id.deref(), &mut left, &mut top, &mut right, &mut bottom)
+    };
+    Rect::default()
+        .left(left)
+        .top(top)
+        .right(right)
+        .bottom(bottom)
 }
