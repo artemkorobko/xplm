@@ -213,3 +213,21 @@ pub fn get_window_geometry(id: &WindowId) -> Rect {
         .right(right)
         .bottom(bottom)
 }
+
+/// Set the position and size of a window.
+/// The units and coordinate system match those of [`get_window_geometry`].
+/// That is, modern windows use global desktop boxel coordinates,
+/// while legacy windows use pixels relative to the main X-Plane display.
+///
+/// Note that this only applies to “floating” windows (that is, windows that are
+/// drawn within the X-Plane simulation windows, rather than being “popped out”
+/// into their own first-class operating system windows).
+///
+/// # Arguments
+/// * `id` - a window identifier.
+/// * `rect` - a bounding box rect of a window.
+pub fn set_window_geometry(id: &WindowId, rect: &Rect) {
+    unsafe {
+        xplm_sys::XPLMSetWindowGeometry(*id.deref(), rect.left, rect.top, rect.right, rect.bottom)
+    };
+}
