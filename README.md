@@ -18,7 +18,7 @@ supports X-Plane version defined in this library.
 - [ ] [XPLMDisplay](https://developer.x-plane.com/sdk/XPLMDisplay)
     - [ ] Drawing callbacks.
     - [ ] Avionics API.
-    - [ ] Window API except `XPLMGetAllMonitorBoundsGlobal`, `XPLMGetAllMonitorBoundsOS`, `XPLMGetWindowGeometryVR`, `XPLMSetWindowGeometryVR`, `XPLMWindowIsInVR`, `XPLMGetWindowRefCon`, `XPLMSetWindowRefCon`.
+    - [X] Window API except `XPLMGetAllMonitorBoundsGlobal`, `XPLMGetAllMonitorBoundsOS`, `XPLMGetWindowGeometryVR`, `XPLMSetWindowGeometryVR`, `XPLMWindowIsInVR`, `XPLMGetWindowRefCon`, `XPLMSetWindowRefCon`.
     - [ ] Key Sniffers.
     - [ ] Hot Keys.
 - [X] [XPLMUtilities](https://developer.x-plane.com/sdk/XPLMUtilities)
