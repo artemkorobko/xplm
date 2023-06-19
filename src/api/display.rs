@@ -257,3 +257,14 @@ pub fn get_window_geometry_os(id: &WindowId) -> Rect {
         .right(right)
         .bottom(bottom)
 }
+
+/// Set the position and size of a window in operating system pixel coordinates.
+///
+/// # Arguments
+/// * `id` - a window identifier.
+/// * `rect` - a bounding box rect of a window.
+pub fn set_window_geometry_os(id: &WindowId, rect: &Rect) {
+    unsafe {
+        xplm_sys::XPLMSetWindowGeometryOS(*id.deref(), rect.left, rect.top, rect.right, rect.bottom)
+    };
+}
