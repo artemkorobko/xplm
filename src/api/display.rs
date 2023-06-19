@@ -376,3 +376,12 @@ pub fn set_window_title<T: Into<String>>(id: &WindowId, title: T) -> Result<()> 
     unsafe { xplm_sys::XPLMSetWindowTitle(*id.deref(), title_c.as_ptr()) };
     Ok(())
 }
+
+/// Gives a specific window keyboard focus.
+/// Keystrokes will be sent to that window.
+///
+/// # Arguments
+/// * `id` - a window identifier.
+pub fn take_keyboard_focus(id: &WindowId) {
+    unsafe { xplm_sys::XPLMTakeKeyboardFocus(*id.deref()) };
+}
