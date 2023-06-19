@@ -15,4 +15,7 @@ pub enum DisplayError {
     /// Unknown mouse wheel axis passed from X-Plane.
     #[error("unknown mouse wheel axis {0}")]
     UnknownMouseWheelAxis(::std::os::raw::c_int),
+    /// Invalid window title string passed to X-Plane.
+    #[error("invalid windiw title {0}")]
+    InvalidWindowTitle(ffi::NulError),
 }

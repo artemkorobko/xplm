@@ -8,6 +8,7 @@ pub mod rect;
 pub mod size;
 pub mod window;
 
+use std::ffi;
 use std::ops::{Deref, DerefMut};
 
 pub use self::coord::Coord;
@@ -359,4 +360,19 @@ pub fn set_window_positioning_mode(
     monitor: ::std::os::raw::c_int,
 ) {
     unsafe { xplm_sys::XPLMSetWindowPositioningMode(*id.deref(), mode.into(), monitor) };
+}
+
+/// Sets the title for a window.
+/// This only applies to windows that opted-in to styling as an X-Plane 11 floating window.
+///
+/// # Arguments
+/// * `id` - a window identifier.
+/// * `title` - a window title.
+///
+/// # Returns
+/// Returns empty result on success. Otherwise returns [`DisplayError`].
+pub fn set_window_title<T: Into<String>>(id: &WindowId, title: T) -> Result<()> {
+    let title_c = ffi::CString::new(title.into()).map_err(DisplayError::InvalidWindowTitle)?;
+    unsafe { xplm_sys::XPLMSetWindowTitle(*id.deref(), title_c.as_ptr()) };
+    Ok(())
 }
