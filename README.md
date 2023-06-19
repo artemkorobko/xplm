@@ -18,7 +18,7 @@ supports X-Plane version defined in this library.
 - [ ] [XPLMDisplay](https://developer.x-plane.com/sdk/XPLMDisplay)
     - [ ] Drawing callbacks.
     - [ ] Avionics API.
-    - [ ] Window API.
+    - [ ] Window API except `XPLMGetAllMonitorBoundsGlobal`, `XPLMGetAllMonitorBoundsOS`.
     - [ ] Key Sniffers.
     - [ ] Hot Keys.
 - [X] [XPLMUtilities](https://developer.x-plane.com/sdk/XPLMUtilities)

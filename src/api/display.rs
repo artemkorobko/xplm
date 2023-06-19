@@ -175,3 +175,14 @@ pub fn get_screen_bounds_global() -> Rect {
         .right(right)
         .bottom(bottom)
 }
+
+/// Returns the current mouse location in global desktop boxels.
+///
+/// # Returns
+/// Returns mouse locatiopn coordinates.
+pub fn get_mouse_location_global() -> Coord {
+    let mut x = 0;
+    let mut y = 0;
+    unsafe { xplm_sys::XPLMGetMouseLocationGlobal(&mut x, &mut y) };
+    Coord::default().x(x).y(y)
+}
