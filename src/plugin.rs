@@ -36,7 +36,7 @@ macro_rules! register_plugin {
                 std::ptr::copy_nonoverlapping(src_c.as_ptr(), dest, src_c_length);
             }
 
-            // Replacee with get_or_try_init after stabilization https://github.com/rust-lang/rust/issues/109737
+            // Replace with get_or_try_init after stabilization https://github.com/rust-lang/rust/issues/109737
             if PLUGIN_INSTANCE.get().is_none() {
                 match <$plugin_type>::start() {
                     Ok(instance) => {
