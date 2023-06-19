@@ -22,7 +22,7 @@ pub type Result<T> = std::result::Result<T, UtilitiesError>;
 /// so it ends in a trailing `:` or `/`.
 ///
 /// # Returns
-/// Returns system path on success. Otherwise returns [`UtilitiesError::InvalidSystemPath`].
+/// Returns system path on success. Otherwise returns [`UtilitiesError`].
 pub fn get_system_path() -> Result<path::PathBuf> {
     unsafe {
         let mut buf = [0; 4096];
@@ -36,7 +36,7 @@ pub fn get_system_path() -> Result<path::PathBuf> {
 /// Returns a full path to a file that is within X-Plane’s preferences directory.
 ///
 /// # Returns
-/// Returns preferences file path on success. Otherwise returns [`UtilitiesError::InvalidPrefsPath`].
+/// Returns preferences file path on success. Otherwise returns [`UtilitiesError`].
 pub fn get_prefs_path() -> Result<path::PathBuf> {
     unsafe {
         let mut buf = [0; 4096];
@@ -51,8 +51,7 @@ pub fn get_prefs_path() -> Result<path::PathBuf> {
 /// The character returned will reflect the current file path mode.
 ///
 /// # Returns
-/// Returns directory separator on success.
-/// Otherwise returns [`UtilitiesError::InvalidDirectorySeparator`] or [`UtilitiesError::EmptyDirectorySeparator`].
+/// Returns directory separator on success. Otherwise returns [`UtilitiesError`].
 pub fn get_directory_separator() -> Result<char> {
     unsafe { ffi::CStr::from_ptr(xplm_sys::XPLMGetDirectorySeparator()) }
         .to_str()
@@ -163,7 +162,7 @@ pub fn get_versions() -> Result<Versions> {
 /// Returns the [`Language`] the sim is running in.
 ///
 /// # Returns
-/// Returns [`Language`] on success. Otherwise returns [`UtilitiesError::UnknownLanguageCode`].
+/// Returns [`Language`] on success. Otherwise returns [`UtilitiesError`].
 pub fn get_language() -> Result<Language> {
     let code = unsafe { xplm_sys::XPLMGetLanguage() };
     Language::try_from(code)
@@ -261,7 +260,7 @@ pub fn reload_scenery() {
 /// # Returns
 /// Returns [`Command`] on success. Otherwise returns:
 /// - [`None`] in case command does not exists.
-/// - [`UtilitiesError::InvalidCommandName`] in case of malformed command name.
+/// - [`UtilitiesError`] in case of malformed command name.
 pub fn find_command<T: Into<String>>(name: T) -> Result<Option<Command>> {
     let name_c = ffi::CString::new(name.into()).map_err(UtilitiesError::InvalidCommandName)?;
     let command = unsafe { xplm_sys::XPLMFindCommand(name_c.as_ptr()) };

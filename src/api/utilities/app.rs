@@ -6,7 +6,9 @@ use super::UtilitiesError;
 /// from that original roadmap; all values other than X-Plane are deprecated.
 /// Your plugin should never need this enumeration.
 pub enum HostApplicationId {
+    /// Unknown application identifier.
     Unknown,
+    /// Xpplication is X-Plane.
     XPlane,
 }
 

@@ -35,9 +35,11 @@ pub trait CommandHandler: 'static {
     fn command_end(&mut self);
 }
 
-/// A link to [`CommandHandler`] for a given [`Command`].
+/// A link to [`CommandHandler`] for a given command.
 pub struct CommandLink {
+    /// A command reference.
     pub command: xplm_sys::XPLMCommandRef,
+    /// A command handler.
     pub handler: Box<dyn CommandHandler>,
 }
 
@@ -45,24 +47,25 @@ impl CommandLink {
     /// Check whether link is pointing to specified command.
     ///
     /// # Arguments
-    /// * `command` - a command to validate with. See [`xplm_sys::XPLMCommandRef`] for more details.
+    /// * `command` - a command to validate with.
+    ///
+    /// # Returns
+    /// Returns `true` if link is pointing to the specific command.
+    /// Otherwise returns `false`.
     pub fn links_with(&self, command: xplm_sys::XPLMCommandRef) -> bool {
         self.command == command
     }
 }
 
 impl CommandHandler for CommandLink {
-    /// Invoke command begin on inner handle.
     fn command_begin(&mut self) {
         self.handler.command_begin();
     }
 
-    /// Invoke command continue on inner handle.
     fn command_continue(&mut self) {
         self.handler.command_continue();
     }
 
-    /// Invoke command end on inner handle.
     fn command_end(&mut self) {
         self.handler.command_end();
     }
@@ -70,7 +73,9 @@ impl CommandHandler for CommandLink {
 
 /// A command handler record to keep a registration alive.
 pub struct CommandHandlerRecord {
+    /// A command link.
     pub link: Box<CommandLink>,
+    /// A command execution time.
     pub execution_time: CommandExecutionTime,
 }
 
