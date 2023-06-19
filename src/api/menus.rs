@@ -16,7 +16,7 @@ pub type Result<T> = std::result::Result<T, MenusError>;
 /// Returns the ID of the plug-ins menu, which is created for you at startup.
 ///
 /// # Returns
-/// Return [`MenuId`] in case of success. Otherwise returns [`MenusError::InvalidId`]
+/// Return [`MenuId`] in case of success. Otherwise returns [`MenusError`]
 pub fn find_plugins_menu() -> Result<MenuId> {
     let id = unsafe { xplm_sys::XPLMFindPluginsMenu() };
     MenuId::try_from(id)
@@ -28,7 +28,7 @@ pub fn find_plugins_menu() -> Result<MenuId> {
 /// [`MenusError`], and any attempts to add menu items to it will fail.
 ///
 /// # Returns
-/// Return [`MenuId`] in case of success. Otherwise returns [`MenusError::InvalidId`]
+/// Return [`MenuId`] in case of success. Otherwise returns [`MenusError`]
 pub fn find_aircraft_menu() -> Result<MenuId> {
     let id = unsafe { xplm_sys::XPLMFindAircraftMenu() };
     MenuId::try_from(id)
@@ -40,9 +40,7 @@ pub fn find_aircraft_menu() -> Result<MenuId> {
 /// * `name` - menu name.
 ///
 /// # Returns
-/// Returns a [`MenuId`] on success. Otherwise returns:
-/// [`MenusError::InvalidMenuName`] in case manu name contains invalid characters.
-/// [`MenusError::CreateError`] in case the menu can't be created.
+/// Returns a [`MenuId`] on success. Otherwise returns [`MenusError`].
 pub fn create_menu<T: Into<String>>(name: T) -> Result<MenuId> {
     let name_c = ffi::CString::new(name.into()).map_err(MenusError::InvalidMenuName)?;
     let id = unsafe {
@@ -65,7 +63,7 @@ pub fn create_menu<T: Into<String>>(name: T) -> Result<MenuId> {
 /// * `parent_item` - a menu item.
 ///
 /// # Returns
-/// Returns a [`MenuId`] on success. Otherwise returns [`MenusError::CreateError`].
+/// Returns a [`MenuId`] on success. Otherwise returns [`MenusError`].
 pub fn create_sub_menu(parent_menu: &MenuId, parent_item: &MenuItemId) -> Result<MenuId> {
     unsafe extern "C" fn menu_handler(
         _menu_ref: *mut ::std::os::raw::c_void,
@@ -110,6 +108,9 @@ pub fn clear_all_menu_items(id: &MenuId) {
 /// # Arguments
 /// * `parent` - parent menu to add item to.
 /// * `text` - a menu text.
+///
+/// # Returns
+/// Return a new [`MenuItemId`] on success. Otherwise return [`MenusError`].
 pub fn append_menu_item<T: Into<String>>(parent: &MenuId, text: T) -> Result<MenuItemId> {
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
     let id = unsafe {
@@ -125,6 +126,9 @@ pub fn append_menu_item<T: Into<String>>(parent: &MenuId, text: T) -> Result<Men
 /// * `parent` - parent menu to add item to.
 /// * `text` - a menu text.
 /// * `command` - a command to execute.
+///
+/// # Returns
+/// Returns a new [`MenuItemId`] on success. Otherwuse returns [`MenusError`].
 pub fn append_menu_item_with_command<T: Into<String>>(
     parent: &MenuId,
     text: T,
@@ -151,6 +155,9 @@ pub fn append_menu_separator(parent: &MenuId) {
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
 /// * `text` - new menu item text.
+///
+/// # Returns
+/// Returns empty result on success. Otherwise return [`MenusError`].
 pub fn set_menu_item_name<T: Into<String>>(
     parent: &MenuId,
     item: &MenuItemId,
@@ -196,6 +203,9 @@ pub fn uncheck_menu_item(parent: &MenuId, item: &MenuItemId) {
 /// # Arguments
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
+///
+/// # Returns
+/// Returns [`MenuItemState`] on success. Otherwise returns [`MenusError`].
 pub fn check_menu_item_state(parent: &MenuId, item: &MenuItemId) -> Result<MenuItemState> {
     let mut state = 0;
     unsafe { xplm_sys::XPLMCheckMenuItemState(*parent.deref(), *item.deref(), &mut state) };
