@@ -2,21 +2,24 @@ use std::ffi;
 
 use crate::api::plugin::PluginError;
 
-/// An error returned from data API calls.
+/// An error returned from data access API calls.
 #[derive(thiserror::Error, Debug)]
 pub enum DataAccessError {
-    /// Invalid dataref id returned from X-Plane.
-    #[error("invalid dataref id")]
+    /// Invalid data ref id returned from X-Plane.
+    #[error("invalid data ref id")]
     InvalidDataRefId,
     /// Unknown data type id returned from X-Plane.
     #[error("unknown data type id")]
     UnknownDataTypeId(xplm_sys::XPLMDataTypeID),
-    /// Invalid datarefs iterator returned from X-Plane.
-    #[error("invalid datarefs iterator")]
+    /// Invalid data refs iterator returned from X-Plane.
+    #[error("invalid data refs iterator")]
     InvalidDataRefsIterator,
-    /// Invalid dataref name passed from X-Plane.
-    #[error("invalid dataref name string {0}")]
+    /// Invalid data ref name passed from X-Plane.
+    #[error("invalid data ref name string {0}")]
     InvalidInfoName(ffi::IntoStringError),
+    /// Invalid data ref name passed to X-Plane.
+    #[error("invalid data ref name string {0}")]
+    InvalidDataRefName(ffi::NulError),
     /// Plugin error.
     #[error("plugin error {0}")]
     Plugin(PluginError),

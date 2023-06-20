@@ -2,6 +2,7 @@ pub mod data_ref;
 pub mod data_refs;
 pub mod error;
 
+use std::ffi;
 use std::ops::Deref;
 
 pub use self::data_ref::DataRef;
@@ -65,4 +66,17 @@ pub fn get_data_ref_info(data_ref: &DataRef) -> Result<DataRefInfo> {
     } else {
         Ok(DataRefInfo::ReadOnly(info))
     }
+}
+
+/// Looks up the actual opaque data ref that is used to read and write the data.
+///
+/// # Arguments
+/// * `name` - a data ref name.
+///
+/// # Returns
+/// Returns a [`DataRef`] in case of success. Otherwise returns [`DataAccessError`].
+pub fn find_data_ref<T: Into<String>>(name: T) -> Result<DataRef> {
+    let name_c = ffi::CString::new(name.into()).map_err(DataAccessError::InvalidDataRefName)?;
+    let data_ref = unsafe { xplm_sys::XPLMFindDataRef(name_c.as_ptr()) };
+    DataRef::try_from(data_ref)
 }
