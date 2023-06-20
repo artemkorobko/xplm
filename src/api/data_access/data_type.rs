@@ -1,5 +1,3 @@
-use super::DataAccessError;
-
 /// Enumeration that defines the type of the data behind a data reference.
 pub enum DataType {
     /// Data of a type the current XPLM doesn't do.
@@ -18,39 +16,85 @@ pub enum DataType {
     Data,
 }
 
-impl TryFrom<xplm_sys::XPLMDataTypeID> for DataType {
-    type Error = DataAccessError;
-
-    fn try_from(value: xplm_sys::XPLMDataTypeID) -> Result<Self, Self::Error> {
-        match value as _ {
-            xplm_sys::xplmType_Unknown => Ok(DataType::Unknown),
-            xplm_sys::xplmType_Int => Ok(DataType::Int),
-            xplm_sys::xplmType_Float => Ok(DataType::Float),
-            xplm_sys::xplmType_Double => Ok(DataType::Double),
-            xplm_sys::xplmType_FloatArray => Ok(DataType::FloatArray),
-            xplm_sys::xplmType_IntArray => Ok(DataType::IntArray),
-            xplm_sys::xplmType_Data => Ok(DataType::Data),
-            _ => Err(Self::Error::UnknownDataTypeId(value)),
-        }
-    }
-}
-
-impl From<DataType> for xplm_sys::XPLMDataTypeID {
-    fn from(value: DataType) -> Self {
-        match value {
-            DataType::Unknown => xplm_sys::xplmType_Unknown as _,
-            DataType::Int => xplm_sys::xplmType_Int as _,
-            DataType::Float => xplm_sys::xplmType_Float as _,
-            DataType::Double => xplm_sys::xplmType_Double as _,
-            DataType::FloatArray => xplm_sys::xplmType_FloatArray as _,
-            DataType::IntArray => xplm_sys::xplmType_IntArray as _,
-            DataType::Data => xplm_sys::xplmType_Data as _,
-        }
-    }
-}
-
-/// Data type bitmap.
+/// Data type flags bitmap.
 pub struct DataTypeId(xplm_sys::XPLMDataTypeID);
+
+impl DataTypeId {
+    /// Checks whether the flags bitmap contains a specific flag.
+    ///
+    /// # Arguments
+    /// * `flag` - a flag to check.
+    ///
+    /// # Returns
+    /// Return `true` if flags contains specific flag. Otherwise returns `false`.
+    pub fn contains(&self, data_type: DataType) -> bool {
+        match data_type {
+            DataType::Unknown => self.is_unknown_type(),
+            DataType::Int => self.is_int_type(),
+            DataType::Float => self.is_float_type(),
+            DataType::Double => self.is_double_type(),
+            DataType::FloatArray => self.is_float_array_type(),
+            DataType::IntArray => self.is_int_array_type(),
+            DataType::Data => self.is_data_type(),
+        }
+    }
+
+    /// Checks whether the flags bitmap contains unknown type flag.
+    ///
+    /// # Returns
+    /// Return `true` if flags contains unknown type. Otherwise returns `false`.
+    pub fn is_unknown_type(&self) -> bool {
+        self.0 == xplm_sys::xplmType_Unknown as _
+    }
+
+    /// Checks whether the flags bitmap contains int type flag.
+    ///
+    /// # Returns
+    /// Return `true` if flags contains int type. Otherwise returns `false`.
+    pub fn is_int_type(&self) -> bool {
+        self.0 & (xplm_sys::xplmType_Int as xplm_sys::XPLMDataTypeID) != 0
+    }
+
+    /// Checks whether the flags bitmap contains float type flag.
+    ///
+    /// # Returns
+    /// Return `true` if flags contains float type. Otherwise returns `false`.
+    pub fn is_float_type(&self) -> bool {
+        self.0 & (xplm_sys::xplmType_Float as xplm_sys::XPLMDataTypeID) != 0
+    }
+
+    /// Checks whether the flags bitmap contains double type flag.
+    ///
+    /// # Returns
+    /// Return `true` if flags contains double type. Otherwise returns `false`.
+    pub fn is_double_type(&self) -> bool {
+        self.0 & (xplm_sys::xplmType_Double as xplm_sys::XPLMDataTypeID) != 0
+    }
+
+    /// Checks whether the flags bitmap contains float array type flag.
+    ///
+    /// # Returns
+    /// Return `true` if flags contains float array type. Otherwise returns `false`.
+    pub fn is_float_array_type(&self) -> bool {
+        self.0 & (xplm_sys::xplmType_FloatArray as xplm_sys::XPLMDataTypeID) != 0
+    }
+
+    /// Checks whether the flags bitmap contains int array type flag.
+    ///
+    /// # Returns
+    /// Return `true` if flags contains int array type. Otherwise returns `false`.
+    pub fn is_int_array_type(&self) -> bool {
+        self.0 & (xplm_sys::xplmType_IntArray as xplm_sys::XPLMDataTypeID) != 0
+    }
+
+    /// Checks whether the flags bitmap contains data type flag.
+    ///
+    /// # Returns
+    /// Return `true` if flags contains data type. Otherwise returns `false`.
+    pub fn is_data_type(&self) -> bool {
+        self.0 & (xplm_sys::xplmType_Data as xplm_sys::XPLMDataTypeID) != 0
+    }
+}
 
 impl From<xplm_sys::XPLMDataTypeID> for DataTypeId {
     fn from(value: xplm_sys::XPLMDataTypeID) -> Self {

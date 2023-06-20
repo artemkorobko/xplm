@@ -8,9 +8,6 @@ pub enum DataAccessError {
     /// Invalid data ref id returned from X-Plane.
     #[error("invalid data ref id")]
     InvalidDataRefId,
-    /// Unknown data type id returned from X-Plane.
-    #[error("unknown data type id")]
-    UnknownDataTypeId(xplm_sys::XPLMDataTypeID),
     /// Invalid data refs iterator returned from X-Plane.
     #[error("invalid data refs iterator")]
     InvalidDataRefsIterator,
