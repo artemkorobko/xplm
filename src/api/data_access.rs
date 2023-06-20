@@ -8,10 +8,10 @@ use std::ops::Deref;
 
 pub use self::data_ref::DataRef;
 pub use self::data_ref::DataRefInfo;
-pub use self::data_type::DataType;
-pub use self::data_type::DataTypeId;
 pub use self::data_ref::Info;
 pub use self::data_refs::DataRefsIter;
+pub use self::data_type::DataType;
+pub use self::data_type::DataTypeId;
 pub use self::error::DataAccessError;
 
 pub type Result<T> = std::result::Result<T, DataAccessError>;
