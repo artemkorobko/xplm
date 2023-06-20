@@ -7,6 +7,7 @@ use std::ops::Deref;
 
 pub use self::data_ref::DataRef;
 pub use self::data_ref::DataRefInfo;
+pub use self::data_ref::DataType;
 pub use self::data_ref::DataTypeId;
 pub use self::data_ref::Info;
 pub use self::data_refs::DataRefsIter;
@@ -101,4 +102,16 @@ pub fn can_write_data_ref(data_ref: &DataRef) -> bool {
 /// Returns `true` if data ref is good and ready to use. Otherwise returns `false`.
 pub fn is_data_ref_good(data_ref: &DataRef) -> bool {
     unsafe { xplm_sys::XPLMIsDataRefGood(*data_ref.deref()) == 1 }
+}
+
+/// Returns the types of the dataref for accessor use.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+///
+/// # Returns
+/// Returns a [`DataTypeId`] for a given data ref.
+pub fn get_data_ref_types(data_ref: &DataRef) -> DataTypeId {
+    let id = unsafe { xplm_sys::XPLMGetDataRefTypes(*data_ref.deref()) };
+    DataTypeId::from(id)
 }
