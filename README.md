@@ -11,6 +11,10 @@ supports X-Plane version defined in this library.
 
 - [ ] [XPLMCamera](https://developer.x-plane.com/sdk/XPLMCamera)
 - [ ] [XPLMDataAccess](https://developer.x-plane.com/sdk/XPLMDataAccess)
+     - [ ] Reading and writing data.
+     - [ ] Data accessors.
+     - [ ] Publishing plugin's data.
+     - [ ] Sharing data between multiple plugins.
 - [ ] [XPLMDefs](https://developer.x-plane.com/sdk/XPLMDefs)
 - [ ] [XPLMDisplay](https://developer.x-plane.com/sdk/XPLMDisplay)
     - [ ] Drawing callbacks.
