@@ -91,3 +91,14 @@ pub fn find_data_ref<T: Into<String>>(name: T) -> Result<DataRef> {
 pub fn can_write_data_ref(data_ref: &DataRef) -> bool {
     unsafe { xplm_sys::XPLMCanWriteDataRef(*data_ref.deref()) == 1 }
 }
+
+/// Check wether a data ref is a valid data ref that is not orphaned.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+///
+/// # Returns
+/// Returns `true` if data ref is good and ready to use. Otherwise returns `false`.
+pub fn is_data_ref_good(data_ref: &DataRef) -> bool {
+    unsafe { xplm_sys::XPLMIsDataRefGood(*data_ref.deref()) == 1 }
+}
