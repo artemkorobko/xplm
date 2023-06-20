@@ -80,3 +80,14 @@ pub fn find_data_ref<T: Into<String>>(name: T) -> Result<DataRef> {
     let data_ref = unsafe { xplm_sys::XPLMFindDataRef(name_c.as_ptr()) };
     DataRef::try_from(data_ref)
 }
+
+/// Checks wether a data ref can be written to.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+///
+/// # Returns
+/// Returns `true` if can write to data ref. Otherwise returns `false`.
+pub fn can_write_data_ref(data_ref: &DataRef) -> bool {
+    unsafe { xplm_sys::XPLMCanWriteDataRef(*data_ref.deref()) == 1 }
+}
