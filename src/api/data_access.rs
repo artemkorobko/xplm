@@ -1,5 +1,6 @@
 pub mod data_ref;
 pub mod data_refs;
+pub mod data_type;
 pub mod error;
 
 use std::ffi;
@@ -7,8 +8,8 @@ use std::ops::Deref;
 
 pub use self::data_ref::DataRef;
 pub use self::data_ref::DataRefInfo;
-pub use self::data_ref::DataType;
-pub use self::data_ref::DataTypeId;
+pub use self::data_type::DataType;
+pub use self::data_type::DataTypeId;
 pub use self::data_ref::Info;
 pub use self::data_refs::DataRefsIter;
 pub use self::error::DataAccessError;
