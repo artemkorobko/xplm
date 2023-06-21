@@ -219,7 +219,7 @@ pub fn set_data_vi(data_ref: &DataRef, offset: usize, array: &[::std::os::raw::c
     };
 }
 
-/// Reads a part of a single precision floating point array array data ref.
+/// Reads a part of a single precision floating point array data ref.
 ///
 /// # Arguments
 /// * `data_ref` - a data ref.
@@ -240,7 +240,7 @@ pub fn get_data_vf(data_ref: &DataRef, offset: usize, array: &mut [f32]) -> usiz
     }
 }
 
-/// Write part or all of a single precision floating point array array dataref.
+/// Write part or all of a single precision floating point array data ref.
 ///
 /// # Arguments
 /// * `data_ref` - a data ref.
@@ -251,6 +251,44 @@ pub fn set_data_vf(data_ref: &DataRef, offset: usize, array: &[f32]) {
         xplm_sys::XPLMSetDatavf(
             *data_ref.deref(),
             array.as_ptr() as *mut f32,
+            offset as ::std::os::raw::c_int,
+            array.len() as ::std::os::raw::c_int,
+        )
+    };
+}
+
+/// Reads a part of a byte array data ref.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+/// * `offset` - an offset to start read values from data ref.
+/// * `array` - an array which will contain read values.
+///
+/// # Return
+/// Return the number of values read into the `array` argument.
+pub fn get_data_b(data_ref: &DataRef, offset: usize, array: &mut [u8]) -> usize {
+    let count = offset + array.len();
+    unsafe {
+        xplm_sys::XPLMGetDatab(
+            *data_ref.deref(),
+            array.as_mut_ptr() as *mut ::std::os::raw::c_void,
+            offset as ::std::os::raw::c_int,
+            count as ::std::os::raw::c_int,
+        ) as _
+    }
+}
+
+/// Write part or all of a byte array data ref.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+/// * `offset` - an offset to start write values to data ref.
+/// * `array` - an array which contains values.
+pub fn set_data_b(data_ref: &DataRef, offset: usize, array: &[u8]) {
+    unsafe {
+        xplm_sys::XPLMSetDatab(
+            *data_ref.deref(),
+            array.as_ptr() as *mut ::std::os::raw::c_void,
             offset as ::std::os::raw::c_int,
             array.len() as ::std::os::raw::c_int,
         )
