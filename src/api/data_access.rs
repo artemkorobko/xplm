@@ -176,3 +176,45 @@ pub fn get_data_d(data_ref: &DataRef) -> f64 {
 pub fn set_data_d(data_ref: &DataRef, value: f64) {
     unsafe { xplm_sys::XPLMSetDatad(*data_ref.deref(), value) }
 }
+
+/// Reads a part of an integer array data ref.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+/// * `offset` - an offset to start read values from data ref.
+/// * `array` - an array which will contain read values.
+///
+/// # Return
+/// Return the number of values read into the `array` argument.
+pub fn get_data_vi(
+    data_ref: &DataRef,
+    offset: usize,
+    array: &mut [::std::os::raw::c_int],
+) -> usize {
+    let count = offset + array.len();
+    unsafe {
+        xplm_sys::XPLMGetDatavi(
+            *data_ref.deref(),
+            array.as_mut_ptr(),
+            offset as ::std::os::raw::c_int,
+            count as ::std::os::raw::c_int,
+        ) as _
+    }
+}
+
+/// Write part or all of an integer array dataref.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+/// * `offset` - an offset to start write values to data ref.
+/// * `array` - an array which contains values.
+pub fn set_data_vi(data_ref: &DataRef, offset: usize, array: &[::std::os::raw::c_int]) {
+    unsafe {
+        xplm_sys::XPLMSetDatavi(
+            *data_ref.deref(),
+            array.as_ptr() as *mut ::std::os::raw::c_int,
+            offset as ::std::os::raw::c_int,
+            array.len() as ::std::os::raw::c_int,
+        )
+    };
+}
