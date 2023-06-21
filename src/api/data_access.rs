@@ -116,3 +116,23 @@ pub fn get_data_ref_types(data_ref: &DataRef) -> DataTypeId {
     let id = unsafe { xplm_sys::XPLMGetDataRefTypes(*data_ref.deref()) };
     DataTypeId::from(id)
 }
+
+/// Reads an integer data ref and return its value.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+///
+/// # Returns
+/// Returns data ref value.
+pub fn get_data_i(data_ref: &DataRef) -> ::std::os::raw::c_int {
+    unsafe { xplm_sys::XPLMGetDatai(*data_ref.deref()) }
+}
+
+/// Writes a new value to an integer data ref.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+/// * `value` - a data ref value.
+pub fn set_data_i(data_ref: &DataRef, value: ::std::os::raw::c_int) {
+    unsafe { xplm_sys::XPLMSetDatai(*data_ref.deref(), value) }
+}
