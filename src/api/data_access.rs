@@ -156,3 +156,23 @@ pub fn get_data_f(data_ref: &DataRef) -> f32 {
 pub fn set_data_f(data_ref: &DataRef, value: f32) {
     unsafe { xplm_sys::XPLMSetDataf(*data_ref.deref(), value) }
 }
+
+/// Reads an double precision floating point data ref and return its value.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+///
+/// # Returns
+/// Returns data ref value.
+pub fn get_data_d(data_ref: &DataRef) -> f64 {
+    unsafe { xplm_sys::XPLMGetDatad(*data_ref.deref()) }
+}
+
+/// Writes a new value to an double precision floating point data ref.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+/// * `value` - a data ref value.
+pub fn set_data_d(data_ref: &DataRef, value: f64) {
+    unsafe { xplm_sys::XPLMSetDatad(*data_ref.deref(), value) }
+}
