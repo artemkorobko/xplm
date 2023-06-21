@@ -136,3 +136,23 @@ pub fn get_data_i(data_ref: &DataRef) -> ::std::os::raw::c_int {
 pub fn set_data_i(data_ref: &DataRef, value: ::std::os::raw::c_int) {
     unsafe { xplm_sys::XPLMSetDatai(*data_ref.deref(), value) }
 }
+
+/// Reads an single precision floating point data ref and return its value.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+///
+/// # Returns
+/// Returns data ref value.
+pub fn get_data_f(data_ref: &DataRef) -> f32 {
+    unsafe { xplm_sys::XPLMGetDataf(*data_ref.deref()) }
+}
+
+/// Writes a new value to an single precision floating point data ref.
+///
+/// # Arguments
+/// * `data_ref` - a data ref.
+/// * `value` - a data ref value.
+pub fn set_data_f(data_ref: &DataRef, value: f32) {
+    unsafe { xplm_sys::XPLMSetDataf(*data_ref.deref(), value) }
+}
