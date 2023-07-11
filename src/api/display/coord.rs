@@ -2,7 +2,7 @@
 pub type CoordType = ::std::os::raw::c_int;
 
 /// X-Plane 2D coordinate definition.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Coord {
     /// The X coordinate.
     pub x: CoordType,
