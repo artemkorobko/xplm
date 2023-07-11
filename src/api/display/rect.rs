@@ -2,7 +2,7 @@
 pub type RectCoordType = ::std::os::raw::c_int;
 
 /// X-Plane 2D rectangle definiton.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Rect {
     /// The left coordinate.
     pub left: RectCoordType,
