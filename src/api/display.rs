@@ -132,7 +132,7 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         handleCursorFunc: Some(handle_cursor),
         handleMouseWheelFunc: Some(handle_mouse_wheel),
         refcon: link_ptr as _,
-        decorateAsFloatingWindow: 0,
+        decorateAsFloatingWindow: xplm_sys::xplm_WindowDecorationRoundRectangle as _,
         layer: xplm_sys::xplm_WindowLayerFloatingWindows as _,
         handleRightClickFunc: Some(mouse_click),
     };
@@ -281,7 +281,7 @@ pub fn set_window_geometry_os(id: &WindowId, rect: &Rect) {
 /// # Returns
 /// Returns `true` if window is visible. Otherwise returns false.
 pub fn get_window_is_visible(id: &WindowId) -> bool {
-    unsafe { xplm_sys::XPLMGetWindowIsVisible(*id.deref()) == 1 }
+    1 == unsafe { xplm_sys::XPLMGetWindowIsVisible(*id.deref()) }
 }
 
 /// Sets a window visible.
