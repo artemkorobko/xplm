@@ -1,3 +1,7 @@
+pub mod position;
+
+pub use position::{LocalPosition, WorldPosition};
+
 /// Graphics state configuration used in [`set_graphics_state`].
 pub struct GraphicsState {
     /// Enables or disables fog, equivalent to: glEnable(GL_FOG).
@@ -63,4 +67,28 @@ pub fn set_graphics_state(state: &GraphicsState) {
 /// * `unit` - is a zero-based texture unit (e.g. 0 for the first one), up to a maximum of 4 units.
 pub fn bind_texture_2d(num: ::std::os::raw::c_int, unit: ::std::os::raw::c_int) {
     unsafe { xplm_sys::XPLMBindTexture2d(num, unit) };
+}
+
+/// Translates coordinates from latitude, longitude, and altitude to local scene coordinates.
+/// Latitude and longitude are in decimal degrees, and altitude is in meters MSL (mean sea level).
+/// The XYZ coordinates are in meters in the local OpenGL coordinate system.
+///
+/// # Arguments
+/// * `world` - a world position. See [`WorldPosition`] for more details.
+///
+/// # Returns
+/// Returns a local position. See [`LocalPosition`] for more details.
+pub fn world_to_local(world: &WorldPosition) -> LocalPosition {
+    let mut local = LocalPosition::default();
+    unsafe {
+        xplm_sys::XPLMWorldToLocal(
+            world.latitude,
+            world.longitude,
+            world.altitude,
+            &mut local.x,
+            &mut local.y,
+            &mut local.z,
+        )
+    };
+    local
 }
