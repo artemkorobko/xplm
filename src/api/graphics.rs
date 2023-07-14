@@ -49,3 +49,18 @@ pub fn set_graphics_state(state: &GraphicsState) {
         )
     };
 }
+
+/// Changes what texture is bound to the 2d texturing target.
+///
+/// This routine caches the current 2d texture across all texturing units in the sim
+/// and plug-ins, preventing extraneous binding. For example, consider several plug-ins
+/// running in series. If they all use the ‘general interface’ bitmap to do UI, calling
+/// this function will skip the rebinding of the general interface texture on all but the
+/// first plug-in, which can provide better frame rates on some graphics cards.
+///
+/// # Arguments
+/// * `num` - is the ID of the texture object to bind.
+/// * `unit` - is a zero-based texture unit (e.g. 0 for the first one), up to a maximum of 4 units.
+pub fn bind_texture_2d(num: ::std::os::raw::c_int, unit: ::std::os::raw::c_int) {
+    unsafe { xplm_sys::XPLMBindTexture2d(num, unit) };
+}
