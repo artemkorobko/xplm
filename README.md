@@ -23,6 +23,7 @@ supports X-Plane version defined in this library.
     - [ ] Key Sniffers.
     - [ ] Hot Keys.
 - [ ] [XPLMGraphics](https://developer.x-plane.com/sdk/XPLMGraphics)
+    - Except `XPLMGenerateTextureNumbers`, `XPLMGetTexture`.
 - [ ] [XPLMInstance](https://developer.x-plane.com/sdk/XPLMInstance)
 - [X] [XPLMMenus](https://developer.x-plane.com/sdk/XPLMMenus)
 - [ ] [XPLMMap](https://developer.x-plane.com/sdk/XPLMMap)
