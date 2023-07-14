@@ -30,7 +30,7 @@ impl TryFrom<xplm_sys::XPLMWindowID> for WindowId {
 /// Window handler trait.
 pub trait WindowHandler: 'static {
     /// A callback to handle 2-D drawing of a window.
-    fn draw(&mut self);
+    fn draw(&mut self, id: &WindowId);
 
     /// A callback for one of three events:
     /// - When the user clicks the mouse button down.
@@ -94,8 +94,8 @@ impl WindowLink {
 }
 
 impl WindowHandler for WindowLink {
-    fn draw(&mut self) {
-        self.0.draw();
+    fn draw(&mut self, id: &WindowId) {
+        self.0.draw(id);
     }
 
     fn mouse_click(&mut self, coord: Coord, status: MouseStatus) -> EventState {

@@ -20,9 +20,7 @@ pub use self::mouse::{MouseStatus, WheelAxis};
 pub use self::rect::Rect;
 pub use self::size::Size;
 pub use self::window::PositioningMode;
-pub use self::window::{WindowHandler, WindowHandlerRecord, WindowLink};
-
-use crate::api::display::window::WindowId;
+pub use self::window::{WindowHandler, WindowHandlerRecord, WindowId, WindowLink};
 
 use super::utilities::VirtualKey;
 
@@ -38,11 +36,13 @@ pub type Result<T> = std::result::Result<T, DisplayError>;
 /// Returns [`WindowHandlerRecord`] on success. Otherwise returns [`DisplayError`].
 pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<WindowHandlerRecord> {
     unsafe extern "C" fn draw_window(
-        _: xplm_sys::XPLMWindowID,
+        id: xplm_sys::XPLMWindowID,
         refcon: *mut ::std::os::raw::c_void,
     ) {
-        let link = refcon as *mut WindowLink;
-        (*link).draw();
+        if let (Ok(id), false) = (WindowId::try_from(id), refcon.is_null()) {
+            let link = refcon as *mut WindowLink;
+            (*link).draw(&id);
+        }
     }
 
     unsafe extern "C" fn mouse_click(
