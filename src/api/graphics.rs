@@ -4,6 +4,8 @@ pub mod state;
 pub use position::{LocalPosition, WorldPosition};
 pub use state::GraphicsState;
 
+use super::display::Rect;
+
 /// Changes OpenGL’s fixed function pipeline state.
 ///
 /// # Arguments
@@ -86,4 +88,14 @@ pub fn local_to_world(local: &LocalPosition) -> WorldPosition {
         )
     };
     world
+}
+
+/// Draws a translucent dark box, partially obscuring parts of the screen
+/// but making text easy to read. This is the same graphics primitive used
+/// by X-Plane to show text files.
+///
+/// # Arguments
+/// * `rect` - a translucent box rectangle. See [`Rect`] for more details.
+pub fn draw_translucent_dark_box(rect: &Rect) {
+    unsafe { xplm_sys::XPLMDrawTranslucentDarkBox(rect.left, rect.top, rect.right, rect.bottom) };
 }
