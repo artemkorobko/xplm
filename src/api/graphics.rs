@@ -60,3 +60,30 @@ pub fn world_to_local(world: &WorldPosition) -> LocalPosition {
     };
     local
 }
+
+/// Translates a local coordinate triplet back into latitude, longitude, and altitude.
+/// Latitude and longitude are in decimal degrees, and altitude is in meters MSL (mean sea level).
+/// The XYZ coordinates are in meters in the local OpenGL coordinate system.
+///
+/// NOTE: world coordinates are less precise than local coordinates.
+/// You should try to avoid round tripping from local to world and back.
+///
+/// # Arguments
+/// * `local` - a local position. See [`LocalPosition`] for more details.
+///
+/// # Returns
+/// Returns a world position. See [`WorldPosition`] for more details.
+pub fn local_to_world(local: &LocalPosition) -> WorldPosition {
+    let mut world = WorldPosition::default();
+    unsafe {
+        xplm_sys::XPLMLocalToWorld(
+            local.x,
+            local.y,
+            local.z,
+            &mut world.latitude,
+            &mut world.longitude,
+            &mut world.altitude,
+        )
+    };
+    world
+}
