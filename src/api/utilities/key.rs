@@ -2,6 +2,7 @@ use super::UtilitiesError;
 
 /// A cross-platform virtual key codes for every distinct keyboard press on the computer.
 #[repr(u32)]
+#[derive(Debug)]
 pub enum VirtualKey {
     Back = xplm_sys::XPLM_VK_BACK,
     Tab = xplm_sys::XPLM_VK_TAB,

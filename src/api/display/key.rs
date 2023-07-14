@@ -8,6 +8,7 @@ pub enum KeyFlag {
 }
 
 /// Modifier key flags bitmap.
+#[derive(Debug)]
 pub struct KeyFlags(xplm_sys::XPLMKeyFlags);
 
 impl KeyFlags {
