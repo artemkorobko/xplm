@@ -1,3 +1,4 @@
+pub mod color;
 pub mod coord;
 pub mod error;
 pub mod event;
@@ -11,6 +12,7 @@ pub mod window;
 use std::ffi;
 use std::ops::{Deref, DerefMut};
 
+pub use self::color::Color;
 pub use self::coord::Coord;
 pub use self::error::DisplayError;
 pub use self::event::EventState;
