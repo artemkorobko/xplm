@@ -48,10 +48,10 @@ impl Size {
     }
 
     /// Adds width to size.
-    /// 
+    ///
     /// # Argumets
     /// * `value` - width to add to the size.
-    /// 
+    ///
     /// # Returns
     /// Returns a size with added width.
     pub fn add_width(mut self, value: SizeType) -> Self {
@@ -60,10 +60,10 @@ impl Size {
     }
 
     /// Adds height to size.
-    /// 
+    ///
     /// # Argumets
     /// * `value` - height to add to the size.
-    /// 
+    ///
     /// # Returns
     /// Returns a size with added height.
     pub fn add_height(mut self, value: SizeType) -> Self {

@@ -1,5 +1,6 @@
 /// Display color representation.
 /// A default color is white.
+#[derive(Debug, Copy, Clone)]
 pub struct Color {
     /// Red color value.
     pub r: f32,

@@ -1,10 +1,18 @@
+pub mod error;
+pub mod font;
 pub mod position;
 pub mod state;
 
+use std::ffi;
+
+pub use error::GraphicsError;
+pub use font::Font;
 pub use position::{LocalPosition, WorldPosition};
 pub use state::GraphicsState;
 
-use super::display::Rect;
+use super::display::{Color, Coord, Rect};
+
+pub type Result<T> = std::result::Result<T, GraphicsError>;
 
 /// Changes OpenGL’s fixed function pipeline state.
 ///
@@ -98,4 +106,27 @@ pub fn local_to_world(local: &LocalPosition) -> WorldPosition {
 /// * `rect` - a translucent box rectangle. See [`Rect`] for more details.
 pub fn draw_translucent_dark_box(rect: &Rect) {
     unsafe { xplm_sys::XPLMDrawTranslucentDarkBox(rect.left, rect.top, rect.right, rect.bottom) };
+}
+
+/// Draws a string in a given font.
+pub fn draw_string<T: Into<String>>(
+    value: T,
+    font: Font,
+    color: &Color,
+    coord: &Coord,
+) -> Result<()> {
+    let value_c = ffi::CString::new(value.into()).map_err(GraphicsError::InvalidString)?;
+    let mut xplm_color = [color.r, color.g, color.b];
+    unsafe {
+        xplm_sys::XPLMDrawString(
+            xplm_color.as_mut_ptr(),
+            coord.x,
+            coord.y,
+            value_c.as_ptr() as _,
+            core::ptr::null_mut(),
+            font.into(),
+        )
+    };
+
+    Ok(())
 }
