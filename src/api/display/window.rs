@@ -50,8 +50,8 @@ pub trait WindowHandler: 'static {
     /// # Arguments
     /// * `key` - the key character which has been pressed or released.
     /// * `virtual_key` - the virtual key which has been pressed or released.
-    /// * `flags` - the key flags bitmap which contains state for special keys and wether the key
-    /// has been pressed or released.
+    /// * `flags` - the key flags bitmap which contains state for special keys and whether the key
+    ///     has been pressed or released.
     fn handle_key(&mut self, key: char, virtual_key: VirtualKey, flags: KeyFlags);
 
     /// Get's called when the mouse is over the plugin window.

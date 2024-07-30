@@ -4,6 +4,9 @@ use crate::api::plugin::PluginId;
 
 use super::{DataAccessError, DataTypeId};
 
+pub struct ReadOnly;
+pub struct ReadWrite;
+
 /// An opaque handle to data provided by the simulator or another plugin.
 pub struct DataRef(xplm_sys::XPLMDataRef);
 
@@ -18,7 +21,7 @@ impl Deref for DataRef {
 impl TryFrom<xplm_sys::XPLMDataRef> for DataRef {
     type Error = DataAccessError;
 
-    fn try_from(value: xplm_sys::XPLMDataRef) -> std::result::Result<Self, Self::Error> {
+    fn try_from(value: xplm_sys::XPLMDataRef) -> Result<Self, Self::Error> {
         if value.is_null() {
             Err(Self::Error::InvalidDataRefId)
         } else {
@@ -27,7 +30,7 @@ impl TryFrom<xplm_sys::XPLMDataRef> for DataRef {
     }
 }
 
-/// Contains all of the information about a single data ref.
+/// Contains information about a single data ref.
 pub struct Info {
     pub name: String,
     pub data_type: DataTypeId,
@@ -51,8 +54,7 @@ impl TryFrom<xplm_sys::XPLMDataRefInfo_t> for Info {
     }
 }
 
-/// Contains all of the information about a single
-/// data ref base of access.
+/// Contains information about a single data ref base of access.
 pub enum DataRefInfo {
     /// Read only data ref information.
     ReadOnly(Info),
