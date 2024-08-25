@@ -1,13 +1,14 @@
+pub mod data_info;
 pub mod data_ref;
 mod data_ref_typed;
 pub mod data_refs;
 pub mod data_type;
 pub mod error;
 
+pub use self::data_info::DataRefInfo;
+pub use self::data_info::Info;
 pub use self::data_ref::DataRef;
-pub use self::data_ref::DataRefInfo;
-pub use self::data_ref::Info;
-pub use self::data_ref_typed::{ReadOnly, ReadWrite, TypedDataRef, MAX_ARRAY_SIZE};
+pub use self::data_ref_typed::{ArrayRead, ArrayWrite, DataRefArray, ReadOnly, ReadWrite};
 pub use self::data_refs::DataRefsIter;
 pub use self::data_type::DataType;
 pub use self::data_type::DataTypeId;
@@ -52,8 +53,8 @@ pub fn get_data_refs_by_index(from: usize, count: usize) -> Result<DataRefsIter>
 /// * `data_ref` - a data ref.
 ///
 /// # Returns
-/// Returns [`DataRefInfo`] if reading completed successfully. Otherwise returns [`DataAccessError`].
-pub fn get_data_ref_info(data_ref_generic: &DataRef) -> Result<DataRefInfo> {
+/// Returns [`DataRefInfo`] if reading completed successfully. Otherwise, returns [`DataAccessError`].
+pub fn get_data_ref_info(data_ref: &DataRef) -> Result<DataRefInfo> {
     let mut info_c = xplm_sys::XPLMDataRefInfo_t {
         structSize: std::mem::size_of::<xplm_sys::XPLMDataRefInfo_t>() as _,
         name: std::ptr::null_mut(),
@@ -62,7 +63,7 @@ pub fn get_data_ref_info(data_ref_generic: &DataRef) -> Result<DataRefInfo> {
         owner: 0,
     };
 
-    unsafe { xplm_sys::XPLMGetDataRefInfo(*data_ref_generic.deref(), &mut info_c) };
+    unsafe { xplm_sys::XPLMGetDataRefInfo(*data_ref.deref(), &mut info_c) };
     let info = Info::try_from(info_c)?;
 
     if info_c.writable == 1 {
@@ -78,7 +79,7 @@ pub fn get_data_ref_info(data_ref_generic: &DataRef) -> Result<DataRefInfo> {
 /// * `name` - a data ref name.
 ///
 /// # Returns
-/// Returns a [`DataRef`] in case of success. Otherwise returns [`DataAccessError`].
+/// Returns a [`DataRef`] in case of success. Otherwise, returns [`DataAccessError`].
 pub fn find_data_ref<T: Into<String>>(name: T) -> Result<DataRef> {
     let name_c = ffi::CString::new(name.into()).map_err(DataAccessError::InvalidDataRefName)?;
     let data_ref = unsafe { xplm_sys::XPLMFindDataRef(name_c.as_ptr()) };
@@ -91,7 +92,7 @@ pub fn find_data_ref<T: Into<String>>(name: T) -> Result<DataRef> {
 /// * `data_ref` - a data ref.
 ///
 /// # Returns
-/// Returns `true` if can write to data ref. Otherwise returns `false`.
+/// Returns `true` if can write to data ref. Otherwise, returns `false`.
 pub fn can_write_data_ref(data_ref: &DataRef) -> bool {
     unsafe { xplm_sys::XPLMCanWriteDataRef(*data_ref.deref()) == 1 }
 }
@@ -102,7 +103,7 @@ pub fn can_write_data_ref(data_ref: &DataRef) -> bool {
 /// * `data_ref` - a data ref.
 ///
 /// # Returns
-/// Returns `true` if data ref is good and ready to use. Otherwise returns `false`.
+/// Returns `true` if data ref is good and ready to use. Otherwise, returns `false`.
 pub fn is_data_ref_good(data_ref: &DataRef) -> bool {
     unsafe { xplm_sys::XPLMIsDataRefGood(*data_ref.deref()) == 1 }
 }

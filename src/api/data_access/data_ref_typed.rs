@@ -9,143 +9,137 @@ pub struct ReadOnly;
 /// This mode allows to modify the data ref.
 pub struct ReadWrite;
 
-/// Typed data ref.
+pub trait DataRead<T> {
+    fn read(&self) -> Result<T>;
+}
+
+pub trait DataWrite<T> {
+    fn write(&self, value: T) -> Result<()>;
+}
+
+macro_rules! impl_data_ref_value {
+    ({
+        type $type:ty;
+        read $read_func:ident;
+        write $write_func:ident;
+    }) => {};
+}
+
+/// A data ref array.
 ///
-/// This is a wrapper around [`DataRef`] that provides type safety.
+/// This is a wrapper around [`DataRef`] that provides type safety for data ref array.
 ///
 /// # Type parameters
 /// * `T` - a type of the data ref.
 /// * `Mode` - a mode of the data ref.
-pub struct TypedDataRef<T, Mode> {
+pub struct DataRefArray<T, Mode> {
     inner: DataRef,
-    type_: PhantomData<T>,
-    mode: PhantomData<Mode>,
+    data_type: PhantomData<T>,
+    mode_type: PhantomData<Mode>,
 }
 
-impl<T> TypedDataRef<T, ReadOnly> {
-    /// Looks up the typed data ref that is used to read the data.
-    ///
-    /// # Arguments
-    /// * `name` - a data ref name.
+impl<T> DataRefArray<T, ReadOnly> {
+    /// Converts the [`DataRefArray`] with [`ReadOnly`] access mode
+    /// to a [`DataRefArray`] with [`ReadWrite`] access mode.
     ///
     /// # Returns
-    /// Returns a [`TypedDataRef`] in case of success. Otherwise, returns [`DataAccessError`].
-    pub fn find<N: Into<String>>(name: N) -> Result<Self> {
-        let inner = find_data_ref(name)?;
+    /// Returns a [`DataRefArray`] in case of success.
+    /// Otherwise, returns [`DataAccessError`].
+    pub fn to_writeable(self) -> Result<DataRefArray<T, ReadWrite>> {
+        if !can_write_data_ref(&self.inner) {
+            return Err(DataAccessError::ReadOnlyDataRef);
+        }
 
+        Ok(DataRefArray {
+            inner: self.inner,
+            data_type: PhantomData,
+            mode_type: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<DataRef> for DataRefArray<T, ReadOnly> {
+    type Error = DataAccessError;
+
+    fn try_from(inner: DataRef) -> Result<Self> {
         if !is_data_ref_good(&inner) {
             return Err(DataAccessError::OrphanedDataRef);
         }
 
         Ok(Self {
             inner,
-            type_: PhantomData,
-            mode: PhantomData,
-        })
-    }
-
-    /// Converts the [`ReadOnly`] typed data ref to a [`ReadWrite`].
-    ///
-    /// # Returns
-    /// Returns a [`TypedDataRef`] in case of success. Otherwise, returns [`DataAccessError`].
-    pub fn to_writeable(self) -> Result<TypedDataRef<T, ReadWrite>> {
-        if !can_write_data_ref(&self.inner) {
-            return Err(DataAccessError::ReadOnlyDataRef);
-        }
-
-        Ok(TypedDataRef {
-            inner: self.inner,
-            type_: PhantomData,
-            mode: PhantomData,
+            data_type: PhantomData,
+            mode_type: PhantomData,
         })
     }
 }
 
-macro_rules! impl_array_read_api {
-    ($type:ty, $default:expr, $read_func:ident) => {
-        /// Reads the element at the specified offset from the typed array data ref. When there is
-        /// a need to read multiple values it's recommended to use [`read_all`] function instead.
-        ///
-        /// # Arguments
-        /// * `offset` - an offset of the element to read.
-        ///
-        /// # Returns
-        /// Returns the element at the specified offset in case of success. Otherwise, returns [`DataAccessError`].
-        pub fn read(&self, offset: usize) -> Result<$type> {
-            if offset >= MAX_ARRAY_SIZE {
-                return Err(DataAccessError::OutOfBounds);
+pub trait ArrayRead<T> {
+    fn read(&self, array: &mut [T]) -> usize;
+    fn read_at<const SIZE: usize>(&self, offset: usize) -> Result<T>;
+}
+
+pub trait ArrayWrite<T> {
+    fn write(&self, array: &[T]);
+    fn write_at<const SIZE: usize>(&self, offset: usize, value: T) -> Result<()>;
+}
+
+macro_rules! impl_data_ref_array {
+    ({
+        type: $type:ty,
+        default: $default:expr,
+        read: $read_func:ident,
+        write: $write_func:ident,
+    }) => {
+        impl ArrayRead<$type> for DataRefArray<$type, ReadOnly> {
+            #[doc = concat!("Reads an array of ", stringify!($type), " from a data ref.")]
+            #[doc = "# Arguments"]
+            #[doc = "* `dest` - a mutable reference to a destination array."]
+            #[doc = "# Returns"]
+            #[doc = "Returns the amount of elements written into the `dest` array."]
+            fn read(&self, dest: &mut [$type]) -> usize {
+                $read_func(&self.inner, 0, dest)
             }
 
-            let mut array = [$default; MAX_ARRAY_SIZE];
-            self.read_all(&mut array);
-            Ok(array[offset])
+            #[doc = concat!("Reads ", stringify!($type), " from an array at specific offset.")]
+            #[doc = "# Arguments"]
+            #[doc = "* `offset` - an offset in the data ref array to start read from."]
+            #[doc = "# Returns"]
+            #[doc = concat!("Returns ", stringify!($type), " value in case of success. Otherwise returns [`DataAccessError`]")]
+            fn read_at<const SIZE: usize>(&self, offset: usize) -> Result<$type> {
+                if offset >= SIZE {
+                    return Err(DataAccessError::OutOfBounds);
+                }
+
+                let mut array = [$default; SIZE];
+                if self.read(&mut array) != array.len() {
+                    return Err(DataAccessError::OutOfBounds);
+                }
+
+                Ok(array[offset])
+            }
         }
 
-        /// Reads the data from the typed array data ref.
-        ///
-        /// # Arguments
-        /// * `array` - an array to read the data into.
-        ///
-        /// # Returns
-        /// Returns the number of elements read.
-        pub fn read_all(&self, array: &mut [$type]) -> usize {
-            $read_func(&self.inner, 0, array)
-        }
-    };
-}
-
-macro_rules! impl_array_write_api {
-    ($type:ty, $write_func:ident) => {
-        /// Writes the element at the specified offset into the typed array data ref. When there
-        /// is a need to write multiple values it's recommended to use [`write_all`] or [`write_all_at`]
-        /// instead.
-        ///
-        /// # Arguments
-        /// * `offset` - an offset of the element to write.
-        /// * `value` - a value to write.
-        ///
-        /// # Returns
-        /// Returns unit in case of success. Otherwise, returns [`DataAccessError`].
-        pub fn write(&self, offset: usize, value: $type) -> Result<()> {
-            self.write_all_at(offset, &[value])
-        }
-
-        /// Writes the data to the typed array data ref.
-        ///
-        /// # Arguments
-        /// * `array` - an array to write the data from.
-        pub fn write_all(&self, array: &[$type]) -> Result<()> {
-            self.write_all_at(0, array)
-        }
-
-        /// Writes the data to specified offset into the typed array data ref.
-        ///
-        /// # Arguments
-        /// * `array` - an array to write the data from.
-        pub fn write_all_at(&self, offset: usize, array: &[$type]) -> Result<()> {
-            if offset >= MAX_ARRAY_SIZE {
-                return Err(DataAccessError::OutOfBounds);
+        impl ArrayWrite<$type> for DataRefArray<$type, ReadWrite> {
+            fn write(&self, array: &[$type]) {
+                set_data_vf(&self.inner, 0, array);
             }
 
-            $write_func(&self.inner, offset, array);
-            Ok(())
+            fn write_at<const SIZE: usize>(&self, offset: usize, value: $type) -> Result<()> {
+                if offset >= SIZE {
+                    return Err(DataAccessError::OutOfBounds);
+                }
+
+                $write_func(&self.inner, offset, &[value]);
+                Ok(())
+            }
         }
     };
 }
 
-macro_rules! impl_typed_array_data_ref {
-    ($type:ty, $default:expr, $read_func:ident, $write_func:ident) => {
-        impl TypedDataRef<[$type; MAX_ARRAY_SIZE], ReadOnly> {
-            impl_array_read_api!($type, $default, $read_func);
-        }
-
-        impl TypedDataRef<[$type; MAX_ARRAY_SIZE], ReadWrite> {
-            impl_array_read_api!($type, $default, $read_func);
-            impl_array_write_api!($type, $write_func);
-        }
-    };
-}
-
-pub const MAX_ARRAY_SIZE: usize = 16;
-
-impl_typed_array_data_ref!(f32, 0.0, get_data_vf, set_data_vf);
+impl_data_ref_array!({
+    type: f32,
+    default: 0.0f32,
+    read: get_data_vf,
+    write: set_data_vf,
+});
