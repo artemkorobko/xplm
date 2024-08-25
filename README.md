@@ -34,7 +34,14 @@ supports X-Plane version defined in this library.
     - [X] Enable/Disable plugins.
     - [X] Interplugin Messagging.
     - [ ] Plugin Features API. `XPLMEnumerateFeatures` is not yet implemented.
-- [ ] [XPLMProcessing](https://developer.x-plane.com/sdk/XPLMProcessing)
+- [X] [XPLMProcessing](https://developer.x-plane.com/sdk/XPLMProcessing)
+    - [X] XPLMGetElapsedTime
+    - [X] XPLMGetCycleNumber
+    - [X] XPLMCreateFlightLoop
+    - [X] XPLMDestroyFlightLoop
+    - [X] XPLMScheduleFlightLoop
+  
+  The following API calls will not be implemented `XPLMRegisterFlightLoopCallback`, `XPLMUnregisterFlightLoopCallback`, `XPLMSetFlightLoopCallbackInterval`.
 - [ ] [XPLMScenery](https://developer.x-plane.com/sdk/XPLMScenery)
 - [ ] [XPLMSound](https://developer.x-plane.com/sdk/XPLMSound)
 - [X] [XPLMUtilities](https://developer.x-plane.com/sdk/XPLMUtilities)
