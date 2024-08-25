@@ -48,16 +48,16 @@ pub fn create_flight_loop<H: FlightLoopHandler>(
         counter: ::std::os::raw::c_int,
         refcon: *mut ::std::os::raw::c_void,
     ) -> f32 {
-        if !refcon.is_null() {
-            let handler = refcon as *mut H;
-            (*handler).handle_flight_loop(
-                elapsed_since_last_call,
-                elapsed_since_last_flight_loop,
-                counter,
-            )
-        } else {
-            0.0
+        if refcon.is_null() {
+            return 0.0;
         }
+
+        let handler = refcon as *mut H;
+        (*handler).handle_flight_loop(
+            elapsed_since_last_call,
+            elapsed_since_last_flight_loop,
+            counter,
+        )
     }
 
     let handler_box = Box::new(handler);

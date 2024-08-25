@@ -10,7 +10,6 @@ pub mod size;
 pub mod window;
 
 use std::ffi;
-use std::ops::{Deref, DerefMut};
 
 pub use self::color::Color;
 pub use self::coord::Coord;
@@ -22,7 +21,7 @@ pub use self::mouse::{MouseStatus, WheelAxis};
 pub use self::rect::Rect;
 pub use self::size::Size;
 pub use self::window::PositioningMode;
-pub use self::window::{WindowHandler, WindowHandlerRecord, WindowId, WindowLink};
+pub use self::window::{Window, WindowHandler, WindowId};
 
 use super::utilities::VirtualKey;
 
@@ -36,29 +35,33 @@ pub type Result<T> = std::result::Result<T, DisplayError>;
 ///
 /// # Returns
 /// Returns [`WindowHandlerRecord`] on success. Otherwise returns [`DisplayError`].
-pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<WindowHandlerRecord> {
-    unsafe extern "C" fn draw_window(
+pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Window> {
+    unsafe extern "C" fn draw_window<H: WindowHandler>(
         id: xplm_sys::XPLMWindowID,
         refcon: *mut ::std::os::raw::c_void,
     ) {
         if let (Ok(id), false) = (WindowId::try_from(id), refcon.is_null()) {
-            let link = refcon as *mut WindowLink;
-            (*link).draw(&id);
+            let handler = refcon as *mut H;
+            (*handler).draw(&id);
         }
     }
 
-    unsafe extern "C" fn mouse_click(
+    unsafe extern "C" fn mouse_click<H: WindowHandler>(
         _: xplm_sys::XPLMWindowID,
         x: ::std::os::raw::c_int,
         y: ::std::os::raw::c_int,
         mouse: xplm_sys::XPLMMouseStatus,
         refcon: *mut ::std::os::raw::c_void,
     ) -> ::std::os::raw::c_int {
+        if refcon.is_null() {
+            return EventState::Propagate.into();
+        }
+
         match MouseStatus::try_from(mouse) {
             Ok(status) => {
-                let link = refcon as *mut WindowLink;
+                let handler = refcon as *mut H;
                 let coord = Coord::default().x(x).y(y);
-                (*link).mouse_click(coord, status).into()
+                (*handler).mouse_click(coord, status).into()
             }
             Err(err) => {
                 crate::error!("{}", err);
@@ -67,7 +70,7 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         }
     }
 
-    unsafe extern "C" fn handle_key(
+    unsafe extern "C" fn handle_key<H: WindowHandler>(
         _: xplm_sys::XPLMWindowID,
         key: ::std::os::raw::c_char,
         flags: xplm_sys::XPLMKeyFlags,
@@ -75,10 +78,14 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         refcon: *mut ::std::os::raw::c_void,
         _: ::std::os::raw::c_int,
     ) {
-        let link = refcon as *mut WindowLink;
+        if refcon.is_null() {
+            return;
+        }
+
+        let handler = refcon as *mut H;
         match VirtualKey::try_from(virtual_key) {
             Ok(virtual_key) => {
-                (*link).handle_key(key as u8 as char, virtual_key, KeyFlags::from(flags))
+                (*handler).handle_key(key as u8 as char, virtual_key, KeyFlags::from(flags))
             }
             Err(err) => {
                 crate::error!("{}", err);
@@ -86,19 +93,19 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         }
     }
 
-    unsafe extern "C" fn handle_cursor(
+    unsafe extern "C" fn handle_cursor<H: WindowHandler>(
         _: xplm_sys::XPLMWindowID,
         x: ::std::os::raw::c_int,
         y: ::std::os::raw::c_int,
         refcon: *mut ::std::os::raw::c_void,
     ) -> xplm_sys::XPLMCursorStatus {
-        let link = refcon as *mut WindowLink;
+        let handler = refcon as *mut H;
         let coord = Coord::default().x(x).y(y);
-        (*link).handle_cursor(coord);
+        (*handler).handle_cursor(coord);
         xplm_sys::xplm_CursorDefault as _
     }
 
-    unsafe extern "C" fn handle_mouse_wheel(
+    unsafe extern "C" fn handle_mouse_wheel<H: WindowHandler>(
         _: xplm_sys::XPLMWindowID,
         x: ::std::os::raw::c_int,
         y: ::std::os::raw::c_int,
@@ -106,11 +113,17 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         clicks: ::std::os::raw::c_int,
         refcon: *mut ::std::os::raw::c_void,
     ) -> ::std::os::raw::c_int {
-        let link = refcon as *mut WindowLink;
+        if refcon.is_null() {
+            return EventState::Propagate.into();
+        }
+
+        let handler = refcon as *mut H;
         match WheelAxis::try_from(wheel) {
             Ok(wheel_axis) => {
                 let coord = Coord::default().x(x).y(y);
-                (*link).handle_mouse_wheel(coord, wheel_axis, clicks).into()
+                (*handler)
+                    .handle_mouse_wheel(coord, wheel_axis, clicks)
+                    .into()
             }
             Err(err) => {
                 crate::error!("{}", err);
@@ -119,8 +132,8 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         }
     }
 
-    let mut link = Box::new(WindowLink::new(Box::new(handler)));
-    let link_ptr: *mut WindowLink = link.deref_mut();
+    let handler_box = Box::new(handler);
+    let handler_ptr = &*handler_box as *const dyn WindowHandler;
     let mut params = xplm_sys::XPLMCreateWindow_t {
         structSize: std::mem::size_of::<xplm_sys::XPLMCreateWindow_t>() as _,
         left: rect.left,
@@ -128,19 +141,19 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         right: rect.right,
         bottom: rect.bottom,
         visible: 0,
-        drawWindowFunc: Some(draw_window),
-        handleMouseClickFunc: Some(mouse_click),
-        handleKeyFunc: Some(handle_key),
-        handleCursorFunc: Some(handle_cursor),
-        handleMouseWheelFunc: Some(handle_mouse_wheel),
-        refcon: link_ptr as _,
+        drawWindowFunc: Some(draw_window::<H>),
+        handleMouseClickFunc: Some(mouse_click::<H>),
+        handleKeyFunc: Some(handle_key::<H>),
+        handleCursorFunc: Some(handle_cursor::<H>),
+        handleMouseWheelFunc: Some(handle_mouse_wheel::<H>),
+        refcon: handler_ptr as _,
         decorateAsFloatingWindow: xplm_sys::xplm_WindowDecorationRoundRectangle as _,
         layer: xplm_sys::xplm_WindowLayerFloatingWindows as _,
-        handleRightClickFunc: Some(mouse_click),
+        handleRightClickFunc: Some(mouse_click::<H>),
     };
 
     let id = unsafe { xplm_sys::XPLMCreateWindowEx(&mut params) };
-    Ok(WindowHandlerRecord::new(WindowId::try_from(id)?, link))
+    Ok(Window::new(WindowId::try_from(id)?, handler_box))
 }
 
 /// Destroys a window.
@@ -148,7 +161,7 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
 /// # Arguments
 /// * `id` - a window identifier. See [`WindowId`] for more details.
 pub fn destroy_window(id: &WindowId) {
-    unsafe { xplm_sys::XPLMDestroyWindow(*id.deref()) };
+    unsafe { xplm_sys::XPLMDestroyWindow(id.native()) };
 }
 
 /// Returns the size of the main X-Plane OpenGL window in pixels.
@@ -214,7 +227,7 @@ pub fn get_window_geometry(id: &WindowId) -> Rect {
     let mut right = 0;
     let mut bottom = 0;
     unsafe {
-        xplm_sys::XPLMGetWindowGeometry(*id.deref(), &mut left, &mut top, &mut right, &mut bottom)
+        xplm_sys::XPLMGetWindowGeometry(id.native(), &mut left, &mut top, &mut right, &mut bottom)
     };
     Rect::default()
         .left(left)
@@ -237,7 +250,7 @@ pub fn get_window_geometry(id: &WindowId) -> Rect {
 /// * `rect` - a bounding box rect of a window.
 pub fn set_window_geometry(id: &WindowId, rect: &Rect) {
     unsafe {
-        xplm_sys::XPLMSetWindowGeometry(*id.deref(), rect.left, rect.top, rect.right, rect.bottom)
+        xplm_sys::XPLMSetWindowGeometry(id.native(), rect.left, rect.top, rect.right, rect.bottom)
     };
 }
 
@@ -255,7 +268,7 @@ pub fn get_window_geometry_os(id: &WindowId) -> Rect {
     let mut right = 0;
     let mut bottom = 0;
     unsafe {
-        xplm_sys::XPLMGetWindowGeometryOS(*id.deref(), &mut left, &mut top, &mut right, &mut bottom)
+        xplm_sys::XPLMGetWindowGeometryOS(id.native(), &mut left, &mut top, &mut right, &mut bottom)
     };
     Rect::default()
         .left(left)
@@ -271,7 +284,7 @@ pub fn get_window_geometry_os(id: &WindowId) -> Rect {
 /// * `rect` - a bounding box rect of a window.
 pub fn set_window_geometry_os(id: &WindowId, rect: &Rect) {
     unsafe {
-        xplm_sys::XPLMSetWindowGeometryOS(*id.deref(), rect.left, rect.top, rect.right, rect.bottom)
+        xplm_sys::XPLMSetWindowGeometryOS(id.native(), rect.left, rect.top, rect.right, rect.bottom)
     };
 }
 
@@ -283,7 +296,7 @@ pub fn set_window_geometry_os(id: &WindowId, rect: &Rect) {
 /// # Returns
 /// Returns `true` if window is visible. Otherwise returns false.
 pub fn get_window_is_visible(id: &WindowId) -> bool {
-    1 == unsafe { xplm_sys::XPLMGetWindowIsVisible(*id.deref()) }
+    1 == unsafe { xplm_sys::XPLMGetWindowIsVisible(id.native()) }
 }
 
 /// Sets a window visible.
@@ -291,7 +304,7 @@ pub fn get_window_is_visible(id: &WindowId) -> bool {
 /// # Arguments
 /// * `id` - a window identifier
 pub fn set_window_visible(id: &WindowId) {
-    unsafe { xplm_sys::XPLMSetWindowIsVisible(*id.deref(), 1) };
+    unsafe { xplm_sys::XPLMSetWindowIsVisible(id.native(), 1) };
 }
 
 /// Sets a window hidden.
@@ -299,7 +312,7 @@ pub fn set_window_visible(id: &WindowId) {
 /// # Arguments
 /// * `id` - a window identifier
 pub fn set_window_hidden(id: &WindowId) {
-    unsafe { xplm_sys::XPLMSetWindowIsVisible(*id.deref(), 0) };
+    unsafe { xplm_sys::XPLMSetWindowIsVisible(id.native(), 0) };
 }
 
 /// Checks wether a window is poppet-out.
@@ -310,7 +323,7 @@ pub fn set_window_hidden(id: &WindowId) {
 /// # Returns
 /// Returns `true` is window is popped-out. Otherwise returns `false`.
 pub fn is_window_popped_out(id: &WindowId) -> bool {
-    unsafe { xplm_sys::XPLMWindowIsPoppedOut(*id.deref()) == 1 }
+    unsafe { xplm_sys::XPLMWindowIsPoppedOut(id.native()) == 1 }
 }
 
 /// A window's “gravity” controls how the window shifts as the whole X-Plane window resizes.
@@ -325,7 +338,7 @@ pub fn is_window_popped_out(id: &WindowId) -> bool {
 /// * `rect` - a gravity options.
 pub fn set_window_gravity(id: &WindowId, rect: &GravityRect) {
     unsafe {
-        xplm_sys::XPLMSetWindowGravity(*id.deref(), rect.left, rect.top, rect.right, rect.bottom)
+        xplm_sys::XPLMSetWindowGravity(id.native(), rect.left, rect.top, rect.right, rect.bottom)
     }
 }
 
@@ -338,7 +351,7 @@ pub fn set_window_gravity(id: &WindowId, rect: &GravityRect) {
 pub fn set_window_resizing_limits(id: &WindowId, min: &Size, max: &Size) {
     unsafe {
         xplm_sys::XPLMSetWindowResizingLimits(
-            *id.deref(),
+            id.native(),
             min.width,
             min.height,
             max.width,
@@ -361,7 +374,7 @@ pub fn set_window_positioning_mode(
     mode: PositioningMode,
     monitor: ::std::os::raw::c_int,
 ) {
-    unsafe { xplm_sys::XPLMSetWindowPositioningMode(*id.deref(), mode.into(), monitor) };
+    unsafe { xplm_sys::XPLMSetWindowPositioningMode(id.native(), mode.into(), monitor) };
 }
 
 /// Sets the title for a window.
@@ -375,7 +388,7 @@ pub fn set_window_positioning_mode(
 /// Returns empty result on success. Otherwise returns [`DisplayError`].
 pub fn set_window_title<T: Into<String>>(id: &WindowId, title: T) -> Result<()> {
     let title_c = ffi::CString::new(title.into()).map_err(DisplayError::InvalidWindowTitle)?;
-    unsafe { xplm_sys::XPLMSetWindowTitle(*id.deref(), title_c.as_ptr()) };
+    unsafe { xplm_sys::XPLMSetWindowTitle(id.native(), title_c.as_ptr()) };
     Ok(())
 }
 
@@ -385,7 +398,7 @@ pub fn set_window_title<T: Into<String>>(id: &WindowId, title: T) -> Result<()> 
 /// # Arguments
 /// * `id` - a window identifier.
 pub fn take_keyboard_focus(id: &WindowId) {
-    unsafe { xplm_sys::XPLMTakeKeyboardFocus(*id.deref()) };
+    unsafe { xplm_sys::XPLMTakeKeyboardFocus(id.native()) };
 }
 
 /// Removes keyboard focus from any plugin-created windows and
@@ -402,7 +415,7 @@ pub fn remove_keyboard_focus() {
 /// # Returns
 /// Return `true` is specified window has focus. Otherwise returns `false`.
 pub fn has_keyboard_focus(id: &WindowId) -> bool {
-    unsafe { xplm_sys::XPLMHasKeyboardFocus(*id.deref()) == 1 }
+    unsafe { xplm_sys::XPLMHasKeyboardFocus(id.native()) == 1 }
 }
 
 /// Brings the window to the front of the Z-order for its layer.
@@ -412,7 +425,7 @@ pub fn has_keyboard_focus(id: &WindowId) -> bool {
 /// # Arguments
 /// * `id` - a window identifier.
 pub fn bring_window_to_front(id: &WindowId) {
-    unsafe { xplm_sys::XPLMBringWindowToFront(*id.deref()) };
+    unsafe { xplm_sys::XPLMBringWindowToFront(id.native()) };
 }
 
 /// Check wether a given window in front or not.
@@ -423,5 +436,5 @@ pub fn bring_window_to_front(id: &WindowId) {
 /// # Returns
 /// Returns `true` if specified window is in front. Otherwise returns `false`.
 pub fn is_window_in_front(id: &WindowId) -> bool {
-    unsafe { xplm_sys::XPLMIsWindowInFront(*id.deref()) == 1 }
+    unsafe { xplm_sys::XPLMIsWindowInFront(id.native()) == 1 }
 }

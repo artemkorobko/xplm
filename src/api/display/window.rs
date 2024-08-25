@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::api::utilities::VirtualKey;
 
 use super::{destroy_window, Coord, DisplayError, EventState, KeyFlags, MouseStatus, WheelAxis};
@@ -7,11 +5,10 @@ use super::{destroy_window, Coord, DisplayError, EventState, KeyFlags, MouseStat
 /// X-Plane window identifier.
 pub struct WindowId(xplm_sys::XPLMWindowID);
 
-impl Deref for WindowId {
-    type Target = xplm_sys::XPLMWindowID;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
+impl WindowId {
+    /// Returns the X-Plane window ID as a raw pointer.
+    pub fn native(&self) -> xplm_sys::XPLMWindowID {
+        self.0
     }
 }
 
@@ -77,72 +74,29 @@ pub trait WindowHandler: 'static {
     ) -> EventState;
 }
 
-/// A link to [`WindowHandler`] for a given window.
-pub struct WindowLink(Box<dyn WindowHandler>);
-
-impl WindowLink {
-    /// Creates a new [`WindowLink`] instance.
-    ///
-    /// # Arguments
-    /// * `value` - a pointer to the [`WindowHandler`] instance.
-    ///
-    /// # Returns
-    /// Return the window link instance.
-    pub fn new(value: Box<dyn WindowHandler>) -> Self {
-        Self(value)
-    }
-}
-
-impl WindowHandler for WindowLink {
-    fn draw(&mut self, id: &WindowId) {
-        self.0.draw(id);
-    }
-
-    fn mouse_click(&mut self, coord: Coord, status: MouseStatus) -> EventState {
-        self.0.mouse_click(coord, status)
-    }
-
-    fn handle_key(&mut self, key: char, virtual_key: VirtualKey, flags: KeyFlags) {
-        self.0.handle_key(key, virtual_key, flags);
-    }
-
-    fn handle_cursor(&mut self, coord: Coord) {
-        self.0.handle_cursor(coord);
-    }
-
-    fn handle_mouse_wheel(
-        &mut self,
-        coord: Coord,
-        wheel_axis: WheelAxis,
-        clicks: i32,
-    ) -> EventState {
-        self.0.handle_mouse_wheel(coord, wheel_axis, clicks)
-    }
-}
-
-/// A window handler record to keep a window alive.
-pub struct WindowHandlerRecord {
+/// A window.
+pub struct Window {
     /// A window identifier.
     pub id: WindowId,
-    /// A window link to event handler.
-    pub link: Box<WindowLink>,
+    /// A window handler.
+    pub handler: Box<dyn WindowHandler>,
 }
 
-impl WindowHandlerRecord {
-    /// Creates a new window handler record instance.
+impl Window {
+    /// Creates a new window instance.
     ///
     /// # Arguments
     /// * `id` - the window identifier.
-    /// * `link` - a pointer to the window link.
+    /// * `handler` - a pointer to the window handler.
     ///
     /// # Return
-    /// Return the new window handler record instance.
-    pub fn new(id: WindowId, link: Box<WindowLink>) -> Self {
-        Self { id, link }
+    /// Return the new window instance.
+    pub fn new(id: WindowId, handler: Box<dyn WindowHandler>) -> Self {
+        Self { id, handler }
     }
 }
 
-impl Drop for WindowHandlerRecord {
+impl Drop for Window {
     fn drop(&mut self) {
         destroy_window(&self.id)
     }

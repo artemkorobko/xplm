@@ -101,11 +101,13 @@ unsafe extern "C" fn menu_handler<H: MenuHandler>(
     menu_ref: *mut ::std::os::raw::c_void,
     item_ref: *mut ::std::os::raw::c_void,
 ) {
-    if !menu_ref.is_null() && !item_ref.is_null() {
-        let handler_ptr = menu_ref as *mut H;
-        let index = item_ref as *mut usize;
-        (*handler_ptr).handle_click(index as usize);
+    if menu_ref.is_null() || item_ref.is_null() {
+        return;
     }
+
+    let handler_ptr = menu_ref as *mut H;
+    let index = item_ref as *mut usize;
+    (*handler_ptr).handle_click(index as usize);
 }
 
 /// This function destroys a menu that you have created. Use this to remove a submenu if necessary.
