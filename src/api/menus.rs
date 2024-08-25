@@ -1,10 +1,14 @@
 pub mod error;
+pub mod handler;
 pub mod menu;
 pub mod state;
 
 use std::{ffi, ops::Deref};
 
+use handler::Menu;
+
 pub use self::error::MenusError;
+pub use self::handler::MenuHandler;
 pub use self::menu::MenuId;
 pub use self::menu::MenuItemId;
 pub use self::state::MenuItemState;
@@ -41,19 +45,27 @@ pub fn find_aircraft_menu() -> Result<MenuId> {
 ///
 /// # Returns
 /// Returns a [`MenuId`] on success. Otherwise returns [`MenusError`].
-pub fn create_menu<T: Into<String>>(name: T) -> Result<MenuId> {
+pub fn create_menu<T: Into<String>, H: MenuHandler>(
+    name: T,
+    parent: &MenuId,
+    parent_item: &MenuItemId,
+    handler: H,
+) -> Result<Menu> {
+    let handler_box = Box::new(handler);
+    let handler_ptr = &*handler_box as *const dyn MenuHandler;
     let name_c = ffi::CString::new(name.into()).map_err(MenusError::InvalidMenuName)?;
     let id = unsafe {
         xplm_sys::XPLMCreateMenu(
             name_c.as_ptr(),
-            std::ptr::null_mut(),
-            0,
-            None,
-            std::ptr::null_mut(),
+            parent.native(),
+            parent_item.native(),
+            Some(menu_handler::<H>),
+            handler_ptr as _,
         )
     };
 
-    MenuId::try_from(id)
+    let menu_id = MenuId::try_from(id)?;
+    Ok(Menu::new(menu_id, handler_box))
 }
 
 /// Creates a new sub-menu and returns its ID.
@@ -64,26 +76,36 @@ pub fn create_menu<T: Into<String>>(name: T) -> Result<MenuId> {
 ///
 /// # Returns
 /// Returns a [`MenuId`] on success. Otherwise returns [`MenusError`].
-pub fn create_sub_menu(parent_menu: &MenuId, parent_item: &MenuItemId) -> Result<MenuId> {
-    unsafe extern "C" fn menu_handler(
-        _menu_ref: *mut ::std::os::raw::c_void,
-        _item_ref: *mut ::std::os::raw::c_void,
-    ) {
-        // let item = item_ref as *const Item;
-        // (*item).handle_click();
-    }
-
+pub fn create_sub_menu<H: MenuHandler>(
+    parent_menu: &MenuId,
+    parent_item: &MenuItemId,
+    handler: H,
+) -> Result<Menu> {
+    let handler_box = Box::new(handler);
+    let handler_ptr = &*handler_box as *const dyn MenuHandler;
     let id = unsafe {
         xplm_sys::XPLMCreateMenu(
             std::ptr::null_mut(),
-            *parent_menu.deref(),
-            *parent_item.deref(),
-            Some(menu_handler),
-            std::ptr::null_mut(),
+            parent_menu.native(),
+            parent_item.native(),
+            Some(menu_handler::<H>),
+            handler_ptr as _,
         )
     };
 
-    MenuId::try_from(id)
+    let menu_id = MenuId::try_from(id)?;
+    Ok(Menu::new(menu_id, handler_box))
+}
+
+unsafe extern "C" fn menu_handler<H: MenuHandler>(
+    menu_ref: *mut ::std::os::raw::c_void,
+    item_ref: *mut ::std::os::raw::c_void,
+) {
+    if !menu_ref.is_null() && !item_ref.is_null() {
+        let handler_ptr = menu_ref as *mut H;
+        let index = item_ref as *mut usize;
+        (*handler_ptr).handle_click(index as usize);
+    }
 }
 
 /// This function destroys a menu that you have created. Use this to remove a submenu if necessary.
@@ -92,7 +114,7 @@ pub fn create_sub_menu(parent_menu: &MenuId, parent_item: &MenuItemId) -> Result
 /// # Arguments
 /// * `id` - a menu id to destroy
 pub fn destroy_menu(id: &MenuId) {
-    unsafe { xplm_sys::XPLMDestroyMenu(*id.deref()) };
+    unsafe { xplm_sys::XPLMDestroyMenu(id.native()) };
 }
 
 /// Removes all menu items from a menu.
@@ -100,7 +122,7 @@ pub fn destroy_menu(id: &MenuId) {
 /// # Arguments
 /// * `id` - a menu id to destroy
 pub fn clear_all_menu_items(id: &MenuId) {
-    unsafe { xplm_sys::XPLMClearAllMenuItems(*id.deref()) };
+    unsafe { xplm_sys::XPLMClearAllMenuItems(id.native()) };
 }
 
 /// Appends a new menu item to the bottom of a menu and returns its index.
@@ -111,11 +133,14 @@ pub fn clear_all_menu_items(id: &MenuId) {
 ///
 /// # Returns
 /// Return a new [`MenuItemId`] on success. Otherwise return [`MenusError`].
-pub fn append_menu_item<T: Into<String>>(parent: &MenuId, text: T) -> Result<MenuItemId> {
+pub fn append_menu_item<T: Into<String>>(
+    parent: &MenuId,
+    text: T,
+    index: usize,
+) -> Result<MenuItemId> {
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
-    let id = unsafe {
-        xplm_sys::XPLMAppendMenuItem(*parent.deref(), text_c.as_ptr(), std::ptr::null_mut(), 0)
-    };
+    let id =
+        unsafe { xplm_sys::XPLMAppendMenuItem(parent.native(), text_c.as_ptr(), index as _, 0) };
     MenuItemId::try_from(id)
 }
 
@@ -136,7 +161,7 @@ pub fn append_menu_item_with_command<T: Into<String>>(
 ) -> Result<MenuItemId> {
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
     let id = unsafe {
-        xplm_sys::XPLMAppendMenuItemWithCommand(*parent.deref(), text_c.as_ptr(), *command.deref())
+        xplm_sys::XPLMAppendMenuItemWithCommand(parent.native(), text_c.as_ptr(), *command.deref())
     };
     MenuItemId::try_from(id)
 }
@@ -146,7 +171,7 @@ pub fn append_menu_item_with_command<T: Into<String>>(
 /// # Arguments
 /// * `parent` - parent menu to add a separator to.
 pub fn append_menu_separator(parent: &MenuId) {
-    unsafe { xplm_sys::XPLMAppendMenuSeparator(*parent.deref()) };
+    unsafe { xplm_sys::XPLMAppendMenuSeparator(parent.native()) };
 }
 
 /// Changes the name of an existing menu item.
@@ -164,7 +189,7 @@ pub fn set_menu_item_name<T: Into<String>>(
     text: T,
 ) -> Result<()> {
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
-    unsafe { xplm_sys::XPLMSetMenuItemName(*parent.deref(), *item.deref(), text_c.as_ptr(), 0) };
+    unsafe { xplm_sys::XPLMSetMenuItemName(parent.native(), item.native(), text_c.as_ptr(), 0) };
     Ok(())
 }
 
@@ -176,8 +201,8 @@ pub fn set_menu_item_name<T: Into<String>>(
 pub fn check_menu_item(parent: &MenuId, item: &MenuItemId) {
     unsafe {
         xplm_sys::XPLMCheckMenuItem(
-            *parent.deref(),
-            *item.deref(),
+            parent.native(),
+            item.native(),
             xplm_sys::xplm_Menu_Checked as i32,
         )
     };
@@ -191,8 +216,8 @@ pub fn check_menu_item(parent: &MenuId, item: &MenuItemId) {
 pub fn uncheck_menu_item(parent: &MenuId, item: &MenuItemId) {
     unsafe {
         xplm_sys::XPLMCheckMenuItem(
-            *parent.deref(),
-            *item.deref(),
+            parent.native(),
+            item.native(),
             xplm_sys::xplm_Menu_Unchecked as i32,
         )
     };
@@ -208,7 +233,7 @@ pub fn uncheck_menu_item(parent: &MenuId, item: &MenuItemId) {
 /// Returns [`MenuItemState`] on success. Otherwise returns [`MenusError`].
 pub fn check_menu_item_state(parent: &MenuId, item: &MenuItemId) -> Result<MenuItemState> {
     let mut state = 0;
-    unsafe { xplm_sys::XPLMCheckMenuItemState(*parent.deref(), *item.deref(), &mut state) };
+    unsafe { xplm_sys::XPLMCheckMenuItemState(parent.native(), item.native(), &mut state) };
     MenuItemState::try_from(state)
 }
 
@@ -218,7 +243,7 @@ pub fn check_menu_item_state(parent: &MenuId, item: &MenuItemId) -> Result<MenuI
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
 pub fn enable_menu_item(parent: &MenuId, item: &MenuItemId) {
-    unsafe { xplm_sys::XPLMEnableMenuItem(*parent.deref(), *item.deref(), 1) };
+    unsafe { xplm_sys::XPLMEnableMenuItem(parent.native(), item.native(), 1) };
 }
 
 /// Disables a menu item.
@@ -227,7 +252,7 @@ pub fn enable_menu_item(parent: &MenuId, item: &MenuItemId) {
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
 pub fn disable_menu_item(parent: &MenuId, item: &MenuItemId) {
-    unsafe { xplm_sys::XPLMEnableMenuItem(*parent.deref(), *item.deref(), 0) };
+    unsafe { xplm_sys::XPLMEnableMenuItem(parent.native(), item.native(), 0) };
 }
 
 /// Removes a menu item from a menu.
@@ -236,5 +261,5 @@ pub fn disable_menu_item(parent: &MenuId, item: &MenuItemId) {
 /// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
 pub fn remove_menu_item(parent: &MenuId, item: &MenuItemId) {
-    unsafe { xplm_sys::XPLMRemoveMenuItem(*parent.deref(), *item.deref()) };
+    unsafe { xplm_sys::XPLMRemoveMenuItem(parent.native(), item.native()) };
 }

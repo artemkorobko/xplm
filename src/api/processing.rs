@@ -1,13 +1,11 @@
 pub mod error;
-pub mod flight_loop;
+pub mod handler;
 pub mod interval;
 pub mod phase;
 
-use std::ops::DerefMut;
-
 pub use error::ProcessingError;
-pub use flight_loop::FlightLoopId;
-pub use flight_loop::{FlightLoopHandler, FlightLoopLink, FlightLoopRecord};
+pub use handler::FlightLoopId;
+pub use handler::{FlightLoop, FlightLoopHandler};
 pub use interval::FlightLoopInterval;
 pub use phase::FlightLoopPhaseType;
 
@@ -43,32 +41,36 @@ pub fn get_cycle_number() -> i32 {
 pub fn create_flight_loop<H: FlightLoopHandler>(
     phase: FlightLoopPhaseType,
     handler: H,
-) -> Result<FlightLoopRecord> {
-    unsafe extern "C" fn handle_flight_loop(
+) -> Result<FlightLoop> {
+    unsafe extern "C" fn handle_flight_loop<H: FlightLoopHandler>(
         elapsed_since_last_call: f32,
         elapsed_since_last_flight_loop: f32,
         counter: ::std::os::raw::c_int,
         refcon: *mut ::std::os::raw::c_void,
     ) -> f32 {
-        let link = refcon as *mut FlightLoopLink;
-        (*link).handle_flight_loop(
-            elapsed_since_last_call,
-            elapsed_since_last_flight_loop,
-            counter,
-        )
+        if !refcon.is_null() {
+            let handler = refcon as *mut H;
+            (*handler).handle_flight_loop(
+                elapsed_since_last_call,
+                elapsed_since_last_flight_loop,
+                counter,
+            )
+        } else {
+            0.0
+        }
     }
 
-    let mut link = Box::new(FlightLoopLink::new(Box::new(handler)));
-    let link_ptr: *mut FlightLoopLink = link.deref_mut();
+    let handler_box = Box::new(handler);
+    let handler_ptr = &*handler_box as *const dyn FlightLoopHandler;
     let mut params = xplm_sys::XPLMCreateFlightLoop_t {
         structSize: std::mem::size_of::<xplm_sys::XPLMCreateFlightLoop_t>() as _,
         phase: phase.native(),
-        callbackFunc: Some(handle_flight_loop),
-        refcon: link_ptr as _,
+        callbackFunc: Some(handle_flight_loop::<H>),
+        refcon: handler_ptr as _,
     };
 
     let id = unsafe { xplm_sys::XPLMCreateFlightLoop(&mut params) };
-    Ok(FlightLoopRecord::new(FlightLoopId::try_from(id)?, link))
+    Ok(FlightLoop::new(FlightLoopId::try_from(id)?, handler_box))
 }
 
 /// Destroys a flight loop callback by it's ID.

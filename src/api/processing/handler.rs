@@ -45,30 +45,17 @@ pub trait FlightLoopHandler: 'static {
     ) -> f32;
 }
 
-/// A link to [`FlightLoopHandler`].
-pub struct FlightLoopLink(Box<dyn FlightLoopHandler>);
-
-impl FlightLoopLink {
-    /// Creates a new [`FlightLoopLink`] instance.
-    ///
-    /// # Arguments
-    /// * `value` - a pointer to the [`FlightLoopHandler`] instance.
-    ///
-    /// # Returns
-    /// Return the flight loop link instance.
-    pub fn new(value: Box<dyn FlightLoopHandler>) -> Self {
-        Self(value)
-    }
-}
-
-impl FlightLoopHandler for FlightLoopLink {
+impl<F> FlightLoopHandler for F
+where
+    F: 'static + FnMut(f32, f32, i32) -> f32,
+{
     fn handle_flight_loop(
         &mut self,
         elapsed_since_last_call: f32,
         elapsed_since_last_flight_loop: f32,
         counter: i32,
     ) -> f32 {
-        self.0.handle_flight_loop(
+        self(
             elapsed_since_last_call,
             elapsed_since_last_flight_loop,
             counter,
@@ -76,29 +63,29 @@ impl FlightLoopHandler for FlightLoopLink {
     }
 }
 
-/// A flight loop callback handler record.
-pub struct FlightLoopRecord {
+/// An object which represents a flight loop.
+pub struct FlightLoop {
     /// A flight loop identififer.
     pub id: FlightLoopId,
-    /// A flight loop link to event handler.
-    pub link: Box<FlightLoopLink>,
+    /// A pointer to the flight loop handler.
+    pub link: Box<dyn FlightLoopHandler>,
 }
 
-impl FlightLoopRecord {
+impl FlightLoop {
     /// Creates a new flight loop handler record instance.
     ///
     /// # Arguments
     /// * `id` - a flight loop identififer.
-    /// * `link` - a pointer to the flight loop link.
+    /// * `link` - a pointer to the flight loop handler.
     ///
-    /// # Return
-    /// Return the new flight loop handler record instance.
-    pub fn new(id: FlightLoopId, link: Box<FlightLoopLink>) -> Self {
+    /// # Returns
+    /// Returns the new flight loop handler record instance.
+    pub fn new(id: FlightLoopId, link: Box<dyn FlightLoopHandler>) -> Self {
         Self { id, link }
     }
 }
 
-impl Drop for FlightLoopRecord {
+impl Drop for FlightLoop {
     fn drop(&mut self) {
         destroy_flight_loop(&self.id)
     }

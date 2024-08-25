@@ -1,15 +1,12 @@
-use std::ops::Deref;
-
 use super::MenusError;
 
 /// Menu idenitifier.
 pub struct MenuId(xplm_sys::XPLMMenuID);
 
-impl Deref for MenuId {
-    type Target = xplm_sys::XPLMMenuID;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
+impl MenuId {
+    /// Returns the X-Plane menu idenitifier.
+    pub fn native(&self) -> xplm_sys::XPLMMenuID {
+        self.0
     }
 }
 
@@ -28,11 +25,10 @@ impl TryFrom<xplm_sys::XPLMMenuID> for MenuId {
 /// Menu item identifier.
 pub struct MenuItemId(::std::os::raw::c_int);
 
-impl Deref for MenuItemId {
-    type Target = ::std::os::raw::c_int;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
+impl MenuItemId {
+    /// Returns the X-Plane menu item idenitifier.
+    pub fn native(&self) -> ::std::os::raw::c_int {
+        self.0
     }
 }
 
