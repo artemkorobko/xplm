@@ -13,3 +13,11 @@ impl From<Font> for xplm_sys::XPLMFontID {
         value as _
     }
 }
+
+/// A font dimensions.
+pub struct FontDimensions {
+    /// Font width.
+    pub width: i32,
+    /// Font height.
+    pub height: i32,
+}

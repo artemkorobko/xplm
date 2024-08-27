@@ -15,17 +15,18 @@ pub use self::color::Color;
 pub use self::coord::Coord;
 pub use self::error::DisplayError;
 pub use self::event::EventState;
-use self::gravity::GravityRect;
+pub use self::gravity::WindowGravityRect;
 pub use self::key::KeyFlags;
 pub use self::mouse::{MouseStatus, WheelAxis};
 pub use self::rect::Rect;
 pub use self::size::Size;
-pub use self::window::PositioningMode;
+pub use self::window::WindowPositioningMode;
 pub use self::window::{Window, WindowHandler, WindowId};
-
-use super::utilities::VirtualKey;
+pub use super::utilities::VirtualKey;
 
 pub type Result<T> = std::result::Result<T, DisplayError>;
+
+pub const X_PLANE_MONITOR: ::std::os::raw::c_int = -1;
 
 /// This routine creates a new “modern” window.
 ///
@@ -47,89 +48,94 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
     }
 
     unsafe extern "C" fn mouse_click<H: WindowHandler>(
-        _: xplm_sys::XPLMWindowID,
+        id: xplm_sys::XPLMWindowID,
         x: ::std::os::raw::c_int,
         y: ::std::os::raw::c_int,
         mouse: xplm_sys::XPLMMouseStatus,
         refcon: *mut ::std::os::raw::c_void,
     ) -> ::std::os::raw::c_int {
-        if refcon.is_null() {
-            return EventState::Propagate.into();
+        if let (Ok(id), false) = (WindowId::try_from(id), refcon.is_null()) {
+            return match MouseStatus::try_from(mouse) {
+                Ok(status) => {
+                    let handler = refcon as *mut H;
+                    let coord = Coord::default().x(x).y(y);
+                    (*handler).mouse_click(&id, coord, status).into()
+                }
+                Err(err) => {
+                    crate::error!("{}", err);
+                    EventState::Propagate.into()
+                }
+            };
         }
 
-        match MouseStatus::try_from(mouse) {
-            Ok(status) => {
-                let handler = refcon as *mut H;
-                let coord = Coord::default().x(x).y(y);
-                (*handler).mouse_click(coord, status).into()
-            }
-            Err(err) => {
-                crate::error!("{}", err);
-                EventState::Propagate.into()
-            }
-        }
+        EventState::Propagate.into()
     }
 
     unsafe extern "C" fn handle_key<H: WindowHandler>(
-        _: xplm_sys::XPLMWindowID,
+        id: xplm_sys::XPLMWindowID,
         key: ::std::os::raw::c_char,
         flags: xplm_sys::XPLMKeyFlags,
         virtual_key: ::std::os::raw::c_char,
         refcon: *mut ::std::os::raw::c_void,
         _: ::std::os::raw::c_int,
     ) {
-        if refcon.is_null() {
-            return;
-        }
-
-        let handler = refcon as *mut H;
-        match VirtualKey::try_from(virtual_key) {
-            Ok(virtual_key) => {
-                (*handler).handle_key(key as u8 as char, virtual_key, KeyFlags::from(flags))
-            }
-            Err(err) => {
-                crate::error!("{}", err);
-            }
+        if let (Ok(id), false) = (WindowId::try_from(id), refcon.is_null()) {
+            let handler = refcon as *mut H;
+            match VirtualKey::try_from(virtual_key) {
+                Ok(virtual_key) => (*handler).handle_key(
+                    &id,
+                    key as u8 as char,
+                    virtual_key,
+                    KeyFlags::from(flags),
+                ),
+                Err(err) => {
+                    crate::error!("{}", err);
+                }
+            };
         }
     }
 
     unsafe extern "C" fn handle_cursor<H: WindowHandler>(
-        _: xplm_sys::XPLMWindowID,
+        id: xplm_sys::XPLMWindowID,
         x: ::std::os::raw::c_int,
         y: ::std::os::raw::c_int,
         refcon: *mut ::std::os::raw::c_void,
     ) -> xplm_sys::XPLMCursorStatus {
-        let handler = refcon as *mut H;
-        let coord = Coord::default().x(x).y(y);
-        (*handler).handle_cursor(coord);
+        if let (Ok(id), false) = (WindowId::try_from(id), refcon.is_null()) {
+            let handler = refcon as *mut H;
+            let coord = Coord::default().x(x).y(y);
+            (*handler).handle_cursor(&id, coord);
+            return xplm_sys::xplm_CursorDefault as _;
+        }
+
         xplm_sys::xplm_CursorDefault as _
     }
 
     unsafe extern "C" fn handle_mouse_wheel<H: WindowHandler>(
-        _: xplm_sys::XPLMWindowID,
+        id: xplm_sys::XPLMWindowID,
         x: ::std::os::raw::c_int,
         y: ::std::os::raw::c_int,
         wheel: ::std::os::raw::c_int,
         clicks: ::std::os::raw::c_int,
         refcon: *mut ::std::os::raw::c_void,
     ) -> ::std::os::raw::c_int {
-        if refcon.is_null() {
-            return EventState::Propagate.into();
+        if let (Ok(id), false) = (WindowId::try_from(id), refcon.is_null()) {
+            let handler = refcon as *mut H;
+            return match WheelAxis::try_from(wheel) {
+                Ok(wheel_axis) => {
+                    let coord = Coord::default().x(x).y(y);
+                    (*handler)
+                        .handle_mouse_wheel(&id, coord, wheel_axis, clicks)
+                        .into()
+                }
+                Err(err) => {
+                    crate::error!("{}", err);
+                    EventState::Propagate.into()
+                }
+            };
         }
 
-        let handler = refcon as *mut H;
-        match WheelAxis::try_from(wheel) {
-            Ok(wheel_axis) => {
-                let coord = Coord::default().x(x).y(y);
-                (*handler)
-                    .handle_mouse_wheel(coord, wheel_axis, clicks)
-                    .into()
-            }
-            Err(err) => {
-                crate::error!("{}", err);
-                EventState::Propagate.into()
-            }
-        }
+        EventState::Propagate.into()
     }
 
     let handler_box = Box::new(handler);
@@ -336,7 +342,7 @@ pub fn is_window_popped_out(id: &WindowId) -> bool {
 /// # Arguments
 /// * `id` - a window identifier.
 /// * `rect` - a gravity options.
-pub fn set_window_gravity(id: &WindowId, rect: &GravityRect) {
+pub fn set_window_gravity(id: &WindowId, rect: &WindowGravityRect) {
     unsafe {
         xplm_sys::XPLMSetWindowGravity(id.native(), rect.left, rect.top, rect.right, rect.bottom)
     }
@@ -371,7 +377,7 @@ pub fn set_window_resizing_limits(id: &WindowId, min: &Size, max: &Size) {
 /// * `monitor` - a monitor index. Specify 0 for default monitor.
 pub fn set_window_positioning_mode(
     id: &WindowId,
-    mode: PositioningMode,
+    mode: WindowPositioningMode,
     monitor: ::std::os::raw::c_int,
 ) {
     unsafe { xplm_sys::XPLMSetWindowPositioningMode(id.native(), mode.into(), monitor) };

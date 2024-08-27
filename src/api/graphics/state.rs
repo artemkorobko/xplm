@@ -25,8 +25,8 @@ impl GraphicsState {
             number_tex_units: 0,
             enable_lighting: 0,
             enable_alpha_testing: 0,
-            enable_alpha_blending: 0,
-            enable_depth_testing: 0,
+            enable_alpha_blending: 1,
+            enable_depth_testing: 1,
             enable_depth_writing: 0,
         }
     }

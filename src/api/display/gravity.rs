@@ -1,6 +1,6 @@
 /// X-Plane 2D rectangle definiton.
 #[derive(Default)]
-pub struct GravityRect {
+pub struct WindowGravityRect {
     /// The left coordinate.
     pub left: f32,
     /// The top coordinate.
@@ -11,7 +11,7 @@ pub struct GravityRect {
     pub bottom: f32,
 }
 
-impl GravityRect {
+impl WindowGravityRect {
     /// Constructs a new rectange.
     ///
     /// # Arguments

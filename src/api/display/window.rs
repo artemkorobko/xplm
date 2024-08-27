@@ -40,7 +40,7 @@ pub trait WindowHandler: 'static {
     ///
     /// # Returns
     /// Returns an event state telling X-Plane what to do with this event.
-    fn mouse_click(&mut self, coord: Coord, status: MouseStatus) -> EventState;
+    fn mouse_click(&mut self, id: &WindowId, coord: Coord, status: MouseStatus) -> EventState;
 
     /// This function is called when a key is pressed or keyboard focus is taken away from your window.
     ///
@@ -49,13 +49,13 @@ pub trait WindowHandler: 'static {
     /// * `virtual_key` - the virtual key which has been pressed or released.
     /// * `flags` - the key flags bitmap which contains state for special keys and whether the key
     ///     has been pressed or released.
-    fn handle_key(&mut self, key: char, virtual_key: VirtualKey, flags: KeyFlags);
+    fn handle_key(&mut self, id: &WindowId, key: char, virtual_key: VirtualKey, flags: KeyFlags);
 
     /// Get's called when the mouse is over the plugin window.
     ///
     /// # Arguments
     /// * `coord` - coordinates at which cursor event occured.
-    fn handle_cursor(&mut self, coord: Coord);
+    fn handle_cursor(&mut self, id: &WindowId, coord: Coord);
 
     /// Get's called when one of the mouse wheels is scrolled within the window.
     ///
@@ -68,6 +68,7 @@ pub trait WindowHandler: 'static {
     /// Returns an event state telling X-Plane what to do with this event.
     fn handle_mouse_wheel(
         &mut self,
+        id: &WindowId,
         coord: Coord,
         wheel_axis: WheelAxis,
         clicks: i32,
@@ -103,7 +104,7 @@ impl Drop for Window {
 }
 
 /// A window positioning mode.
-pub enum PositioningMode {
+pub enum WindowPositioningMode {
     /// The default positioning mode. Set the window geometry and its
     /// future position will be determined by its window gravity,
     /// resizing limits, and user interactions.
@@ -121,8 +122,8 @@ pub enum PositioningMode {
     WindowVR = 5,
 }
 
-impl From<PositioningMode> for xplm_sys::XPLMWindowPositioningMode {
-    fn from(value: PositioningMode) -> Self {
+impl From<WindowPositioningMode> for xplm_sys::XPLMWindowPositioningMode {
+    fn from(value: WindowPositioningMode) -> Self {
         value as xplm_sys::XPLMWindowPositioningMode
     }
 }
