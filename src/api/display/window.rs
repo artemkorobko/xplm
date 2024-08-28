@@ -3,6 +3,7 @@ use crate::api::utilities::VirtualKey;
 use super::{destroy_window, Coord, DisplayError, EventState, KeyFlags, MouseStatus, WheelAxis};
 
 /// X-Plane window identifier.
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct WindowId(xplm_sys::XPLMWindowID);
 
 impl WindowId {

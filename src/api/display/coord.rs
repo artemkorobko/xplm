@@ -46,4 +46,52 @@ impl Coord {
         self.y = value;
         self
     }
+
+    /// Shifts the X coordinate to the left.
+    ///
+    /// # Arguments
+    /// * `value` - the value to shift.
+    ///
+    /// # Returns
+    /// Returns new instance of the coordinate with modified parameter.
+    pub fn shift_left(mut self, value: CoordType) -> Self {
+        self.x -= value;
+        self
+    }
+
+    /// Shifts the X coordinate to the right.
+    ///
+    /// # Arguments
+    /// * `value` - the value to shift.
+    ///
+    /// # Returns
+    /// Returns new instance of the coordinate with modified parameter.
+    pub fn shift_right(mut self, value: CoordType) -> Self {
+        self.x += value;
+        self
+    }
+
+    /// Shifts the Y coordinate to the top.
+    ///
+    /// # Arguments
+    /// * `value` - the value to shift.
+    ///
+    /// # Returns
+    /// Returns new instance of the coordinate with modified parameter.
+    pub fn shift_top(mut self, value: CoordType) -> Self {
+        self.y += value;
+        self
+    }
+
+    /// Shifts the Y coordinate to the bottom.
+    ///
+    /// # Arguments
+    /// * `value` - the value to shift.
+    ///
+    /// # Returns
+    /// Returns new instance of the coordinate with modified parameter.
+    pub fn shift_bottom(mut self, value: CoordType) -> Self {
+        self.y -= value;
+        self
+    }
 }
