@@ -9,21 +9,94 @@ pub struct ReadOnly;
 /// This mode allows to modify the data ref.
 pub struct ReadWrite;
 
+/// A data ref value.
+///
+/// This is a wrapper around [`DataRef`] that provides type safety for data ref value.
+///
+/// # Type parameters
+/// * `T` - a type of the data ref.
+/// * `Mode` - a mode of the data ref.
+pub struct DataRefValue<T, Mode> {
+    inner: DataRef,
+    data_type: PhantomData<T>,
+    mode_type: PhantomData<Mode>,
+}
+
+impl<T> DataRefValue<T, ReadOnly> {
+    /// Converts the [`DataRefValue`] with [`ReadOnly`] access mode
+    /// to a [`DataRefValue`] with [`ReadWrite`] access mode.
+    ///
+    /// # Returns
+    /// Returns a [`DataRefValue`] in case of success.
+    /// Otherwise, returns [`DataAccessError`].
+    pub fn to_writeable(self) -> Result<DataRefValue<T, ReadWrite>> {
+        if !can_write_data_ref(&self.inner) {
+            return Err(DataAccessError::ReadOnlyDataRef);
+        }
+
+        Ok(DataRefValue {
+            inner: self.inner,
+            data_type: PhantomData,
+            mode_type: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<DataRef> for DataRefValue<T, ReadOnly> {
+    type Error = DataAccessError;
+
+    fn try_from(inner: DataRef) -> Result<Self> {
+        if !is_data_ref_good(&inner) {
+            return Err(DataAccessError::OrphanedDataRef);
+        }
+
+        Ok(Self {
+            inner,
+            data_type: PhantomData,
+            mode_type: PhantomData,
+        })
+    }
+}
+
 pub trait DataRead<T> {
-    fn read(&self) -> Result<T>;
+    fn read(&self) -> T;
 }
 
 pub trait DataWrite<T> {
-    fn write(&self, value: T) -> Result<()>;
+    fn write(&self, value: T);
 }
 
 macro_rules! impl_data_ref_value {
     ({
-        type $type:ty;
-        read $read_func:ident;
-        write $write_func:ident;
-    }) => {};
+        type: $type:ty,
+        read: $read_func:ident,
+        write: $write_func:ident,
+    }) => {
+        impl DataRead<$type> for DataRefValue<$type, ReadOnly> {
+            #[doc = concat!("Reads a value of ", stringify!($type), " from a data ref.")]
+            fn read(&self) -> $type {
+                $read_func(&self.inner)
+            }
+        }
+
+        impl DataWrite<$type> for DataRefValue<$type, ReadWrite> {
+            fn write(&self, value: $type) {
+                $write_func(&self.inner, value);
+            }
+        }
+    };
 }
+
+impl_data_ref_value!({
+    type: f64,
+    read: get_data_d,
+    write: set_data_d,
+});
+impl_data_ref_value!({
+    type: f32,
+    read: get_data_f,
+    write: set_data_f,
+});
 
 /// A data ref array.
 ///
@@ -122,7 +195,7 @@ macro_rules! impl_data_ref_array {
 
         impl ArrayWrite<$type> for DataRefArray<$type, ReadWrite> {
             fn write(&self, array: &[$type]) {
-                set_data_vf(&self.inner, 0, array);
+                $write_func(&self.inner, 0, array);
             }
 
             fn write_at<const SIZE: usize>(&self, offset: usize, value: $type) -> Result<()> {

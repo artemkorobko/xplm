@@ -8,7 +8,9 @@ pub mod error;
 pub use self::data_info::DataRefInfo;
 pub use self::data_info::Info;
 pub use self::data_ref::DataRef;
-pub use self::data_ref_typed::{ArrayRead, ArrayWrite, DataRefArray, ReadOnly, ReadWrite};
+pub use self::data_ref_typed::{
+    ArrayRead, ArrayWrite, DataRead, DataRefArray, DataRefValue, DataWrite, ReadOnly, ReadWrite,
+};
 pub use self::data_refs::DataRefsIter;
 pub use self::data_type::DataType;
 pub use self::data_type::DataTypeId;

@@ -1,6 +1,7 @@
 use super::MenusError;
 
 /// Menu idenitifier.
+#[derive(Copy, Clone)]
 pub struct MenuId(xplm_sys::XPLMMenuID);
 
 impl MenuId {
@@ -23,6 +24,7 @@ impl TryFrom<xplm_sys::XPLMMenuID> for MenuId {
 }
 
 /// Menu item identifier.
+#[derive(Copy, Clone)]
 pub struct MenuItemId(::std::os::raw::c_int);
 
 impl MenuItemId {
@@ -41,5 +43,24 @@ impl TryFrom<::std::os::raw::c_int> for MenuItemId {
         } else {
             Ok(Self(value))
         }
+    }
+}
+
+pub struct MenuItem {
+    parent: MenuId,
+    id: MenuItemId,
+}
+
+impl MenuItem {
+    pub fn new(parent: MenuId, id: MenuItemId) -> Self {
+        Self { parent, id }
+    }
+
+    pub fn parent(&self) -> &MenuId {
+        &self.parent
+    }
+
+    pub fn id(&self) -> &MenuItemId {
+        &self.id
     }
 }

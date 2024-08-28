@@ -10,6 +10,7 @@ use handler::Menu;
 pub use self::error::MenusError;
 pub use self::handler::MenuHandler;
 pub use self::menu::MenuId;
+pub use self::menu::MenuItem;
 pub use self::menu::MenuItemId;
 pub use self::state::MenuItemState;
 
@@ -139,11 +140,11 @@ pub fn append_menu_item<T: Into<String>>(
     parent: &MenuId,
     text: T,
     index: usize,
-) -> Result<MenuItemId> {
+) -> Result<MenuItem> {
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
     let id =
         unsafe { xplm_sys::XPLMAppendMenuItem(parent.native(), text_c.as_ptr(), index as _, 0) };
-    MenuItemId::try_from(id)
+    Ok(MenuItem::new(*parent, MenuItemId::try_from(id)?))
 }
 
 /// Appends a new menu item to the bottom of a menu and returns its index but instead of the new menu
@@ -179,19 +180,21 @@ pub fn append_menu_separator(parent: &MenuId) {
 /// Changes the name of an existing menu item.
 ///
 /// # Arguments
-/// * `parent` - a parent menu id which contains an item.
 /// * `item` - a menu item to update.
 /// * `text` - new menu item text.
 ///
 /// # Returns
 /// Returns empty result on success. Otherwise return [`MenusError`].
-pub fn set_menu_item_name<T: Into<String>>(
-    parent: &MenuId,
-    item: &MenuItemId,
-    text: T,
-) -> Result<()> {
+pub fn set_menu_item_name<T: Into<String>>(item: &MenuItem, text: T) -> Result<()> {
     let text_c = ffi::CString::new(text.into()).map_err(MenusError::InvalidMenuName)?;
-    unsafe { xplm_sys::XPLMSetMenuItemName(parent.native(), item.native(), text_c.as_ptr(), 0) };
+    unsafe {
+        xplm_sys::XPLMSetMenuItemName(
+            item.parent().native(),
+            item.id().native(),
+            text_c.as_ptr(),
+            0,
+        )
+    };
     Ok(())
 }
 
