@@ -97,6 +97,11 @@ impl_data_ref_value!({
     read: get_data_f,
     write: set_data_f,
 });
+impl_data_ref_value!({
+    type: i32,
+    read: get_data_i,
+    write: set_data_i,
+});
 
 /// A data ref array.
 ///
