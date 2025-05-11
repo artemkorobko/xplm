@@ -1,0 +1,104 @@
+#[repr(u8)]
+pub enum CommandButton {
+    Nothing = 0,     // xplm_joy_nothing=0
+    StartAll = 1,    // xplm_joy_start_all
+    Start0 = 2,      // xplm_joy_start_0
+    Start1 = 3,      // xplm_joy_start_1
+    Start2 = 4,      // xplm_joy_start_2
+    Start3 = 5,      // xplm_joy_start_3
+    Start4 = 6,      // xplm_joy_start_4
+    Start5 = 7,      // xplm_joy_start_5
+    Start6 = 8,      // xplm_joy_start_6
+    Start7 = 9,      // xplm_joy_start_7
+    ThrotUp = 10,    // xplm_joy_throt_up
+    ThrotDn = 11,    // xplm_joy_throt_dn
+    PropUp = 12,     // xplm_joy_prop_up
+    PropDn = 13,     // xplm_joy_prop_dn
+    MixtUp = 14,     // xplm_joy_mixt_up
+    MixtDn = 15,     // xplm_joy_mixt_dn
+    CarbTog = 16,    // xplm_joy_carb_tog
+    CarbOn = 17,     // xplm_joy_carb_on
+    CarbOff = 18,    // xplm_joy_carb_off
+    Trev = 19,       // xplm_joy_trev
+    TrmUp = 20,      // xplm_joy_trm_up
+    TrmDn = 21,      // xplm_joy_trm_dn
+    RotTrmUp = 22,   // xplm_joy_rot_trm_up
+    RotTrmDn = 23,   // xplm_joy_rot_trm_dn
+    RudLft = 24,     // xplm_joy_rud_lft
+    RudCntr = 25,    // xplm_joy_rud_cntr
+    RudRgt = 26,     // xplm_joy_rud_rgt
+    AilLft = 27,     // xplm_joy_ail_lft
+    AilCntr = 28,    // xplm_joy_ail_cntr
+    AilRgt = 29,     // xplm_joy_ail_rgt
+    BRudLft = 30,    // xplm_joy_B_rud_lft
+    BRudRgt = 31,    // xplm_joy_B_rud_rgt
+    LookUp = 32,     // xplm_joy_look_up
+    LookDn = 33,     // xplm_joy_look_dn
+    LookLft = 34,    // xplm_joy_look_lft
+    LookRgt = 35,    // xplm_joy_look_rgt
+    GlanceL = 36,    // xplm_joy_glance_l
+    GlanceR = 37,    // xplm_joy_glance_r
+    VFnh = 38,       // xplm_joy_v_fnh
+    VFwh = 39,       // xplm_joy_v_fwh
+    VTra = 40,       // xplm_joy_v_tra
+    VTwr = 41,       // xplm_joy_v_twr
+    VRun = 42,       // xplm_joy_v_run
+    VCha = 43,       // xplm_joy_v_cha
+    VFr1 = 44,       // xplm_joy_v_fr1
+    VFr2 = 45,       // xplm_joy_v_fr2
+    VSpo = 46,       // xplm_joy_v_spo
+    Flapsup = 47,    // xplm_joy_flapsup
+    Flapsdn = 48,    // xplm_joy_flapsdn
+    Vctswpfwd = 49,  // xplm_joy_vctswpfwd
+    Vctswpaft = 50,  // xplm_joy_vctswpaft
+    GearTog = 51,    // xplm_joy_gear_tog
+    GearUp = 52,     // xplm_joy_gear_up
+    GearDown = 53,   // xplm_joy_gear_down
+    LftBrake = 54,   // xplm_joy_lft_brake
+    RgtBrake = 55,   // xplm_joy_rgt_brake
+    BrakesREG = 56,  // xplm_joy_brakesREG
+    BrakesMAX = 57,  // xplm_joy_brakesMAX
+    Speedbrake = 58, // xplm_joy_speedbrake
+    OttDis = 59,     // xplm_joy_ott_dis
+    OttAtr = 60,     // xplm_joy_ott_atr
+    OttAsi = 61,     // xplm_joy_ott_asi
+    OttHdg = 62,     // xplm_joy_ott_hdg
+    OttAlt = 63,     // xplm_joy_ott_alt
+    OttVvi = 64,     // xplm_joy_ott_vvi
+    TimStart = 65,   // xplm_joy_tim_start
+    TimReset = 66,   // xplm_joy_tim_reset
+    EcamUp = 67,     // xplm_joy_ecam_up
+    EcamDn = 68,     // xplm_joy_ecam_dn
+    Fadec = 69,      // xplm_joy_fadec
+    YawDamp = 70,    // xplm_joy_yaw_damp
+    ArtStab = 71,    // xplm_joy_art_stab
+    Chute = 72,      // xplm_joy_chute
+    JATO = 73,       // xplm_joy_JATO
+    Arrest = 74,     // xplm_joy_arrest
+    Jettison = 75,   // xplm_joy_jettison
+    FuelDump = 76,   // xplm_joy_fuel_dump
+    Puffsmoke = 77,  // xplm_joy_puffsmoke
+    Prerotate = 78,  // xplm_joy_prerotate
+    ULPrerot = 79,   // xplm_joy_UL_prerot
+    ULCollec = 80,   // xplm_joy_UL_collec
+    TOGA = 81,       // xplm_joy_TOGA
+    Shutdown = 82,   // xplm_joy_shutdown
+    ConAtc = 83,     // xplm_joy_con_atc
+    FailNow = 84,    // xplm_joy_fail_now
+    Pause = 85,      // xplm_joy_pause
+    RockUp = 86,     // xplm_joy_rock_up
+    RockDn = 87,     // xplm_joy_rock_dn
+    RockLft = 88,    // xplm_joy_rock_lft
+    RockRgt = 89,    // xplm_joy_rock_rgt
+    RockFor = 90,    // xplm_joy_rock_for
+    RockAft = 91,    // xplm_joy_rock_aft
+    IdleHilo = 92,   // xplm_joy_idle_hilo
+    Lanlights = 93,  // xplm_joy_lanlights
+    Max = 94,        // xplm_joy_ma
+}
+
+impl CommandButton {
+    pub fn native(self) -> u8 {
+        self as u8
+    }
+}

@@ -1,5 +1,7 @@
 pub mod app;
 pub mod command;
+pub mod command_button;
+pub mod command_key;
 pub mod error;
 pub mod file;
 pub mod key;
@@ -8,13 +10,14 @@ pub mod lang;
 use std::ops::Deref;
 use std::{ffi, ops::DerefMut, path, str, sync::OnceLock};
 
-pub use self::app::{HostApplicationId, Versions};
-pub use self::command::Command;
-pub use self::command::{CommandExecutionTime, CommandHandler, CommandHandlerRecord, CommandLink};
-pub use self::error::UtilitiesError;
-pub use self::file::DataFileType;
-pub use self::key::VirtualKey;
-pub use self::lang::Language;
+pub use app::{HostApplicationId, Versions};
+pub use command::*;
+pub use command_button::CommandButton;
+pub use command_key::CommandKey;
+pub use error::UtilitiesError;
+pub use file::DataFileType;
+pub use key::VirtualKey;
+pub use lang::Language;
 
 pub type Result<T> = std::result::Result<T, UtilitiesError>;
 

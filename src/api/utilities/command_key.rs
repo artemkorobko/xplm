@@ -1,0 +1,104 @@
+#[repr(u8)]
+pub enum CommandKey {
+    Pause = 0,      // xplm_key_pause
+    Revthrust = 1,  // xplm_key_revthrust
+    Jettison = 2,   // xplm_key_jettison
+    Brakesreg = 3,  // xplm_key_brakesreg
+    Brakesmax = 4,  // xplm_key_brakesmax
+    Gear = 5,       // xplm_key_gear
+    Timedn = 6,     // xplm_key_timedn
+    Timeup = 7,     // xplm_key_timeup
+    Fadec = 8,      // xplm_key_fadec
+    OttoDis = 9,    // xplm_key_otto_dis
+    OttoAtr = 10,   // xplm_key_otto_atr
+    OttoAsi = 11,   // xplm_key_otto_asi
+    OttoHdg = 12,   // xplm_key_otto_hdg
+    OttoGps = 13,   // xplm_key_otto_gps
+    OttoLev = 14,   // xplm_key_otto_lev
+    OttoHnav = 15,  // xplm_key_otto_hnav
+    OttoAlt = 16,   // xplm_key_otto_alt
+    OttoVvi = 17,   // xplm_key_otto_vvi
+    OttoVnav = 18,  // xplm_key_otto_vnav
+    OttoNav1 = 19,  // xplm_key_otto_nav1
+    OttoNav2 = 20,  // xplm_key_otto_nav2
+    TargDn = 21,    // xplm_key_targ_dn
+    TargUp = 22,    // xplm_key_targ_up
+    Hdgdn = 23,     // xplm_key_hdgdn
+    Hdgup = 24,     // xplm_key_hdgup
+    Barodn = 25,    // xplm_key_barodn
+    Baroup = 26,    // xplm_key_baroup
+    Obs1dn = 27,    // xplm_key_obs1dn
+    Obs1up = 28,    // xplm_key_obs1up
+    Obs2dn = 29,    // xplm_key_obs2dn
+    Obs2up = 30,    // xplm_key_obs2up
+    Com1_1 = 31,    // xplm_key_com1_1
+    Com1_2 = 32,    // xplm_key_com1_2
+    Com1_3 = 33,    // xplm_key_com1_3
+    Com1_4 = 34,    // xplm_key_com1_4
+    Nav1_1 = 35,    // xplm_key_nav1_1
+    Nav1_2 = 36,    // xplm_key_nav1_2
+    Nav1_3 = 37,    // xplm_key_nav1_3
+    Nav1_4 = 38,    // xplm_key_nav1_4
+    Com2_1 = 39,    // xplm_key_com2_1
+    Com2_2 = 40,    // xplm_key_com2_2
+    Com2_3 = 41,    // xplm_key_com2_3
+    Com2_4 = 42,    // xplm_key_com2_4
+    Nav2_1 = 43,    // xplm_key_nav2_1
+    Nav2_2 = 44,    // xplm_key_nav2_2
+    Nav2_3 = 45,    // xplm_key_nav2_3
+    Nav2_4 = 46,    // xplm_key_nav2_4
+    Adf1 = 47,      // xplm_key_adf_1
+    Adf2 = 48,      // xplm_key_adf_2
+    Adf3 = 49,      // xplm_key_adf_3
+    Adf4 = 50,      // xplm_key_adf_4
+    Adf5 = 51,      // xplm_key_adf_5
+    Adf6 = 52,      // xplm_key_adf_6
+    Transpon1 = 53, // xplm_key_transpon_1
+    Transpon2 = 54, // xplm_key_transpon_2
+    Transpon3 = 55, // xplm_key_transpon_3
+    Transpon4 = 56, // xplm_key_transpon_4
+    Transpon5 = 57, // xplm_key_transpon_5
+    Transpon6 = 58, // xplm_key_transpon_6
+    Transpon7 = 59, // xplm_key_transpon_7
+    Transpon8 = 60, // xplm_key_transpon_8
+    Flapsup = 61,   // xplm_key_flapsup
+    Flapsdn = 62,   // xplm_key_flapsdn
+    Cheatoff = 63,  // xplm_key_cheatoff
+    Cheaton = 64,   // xplm_key_cheaton
+    Sbrkoff = 65,   // xplm_key_sbrkoff
+    Sbrkon = 66,    // xplm_key_sbrkon
+    AiltrimL = 67,  // xplm_key_ailtrimL
+    AiltrimR = 68,  // xplm_key_ailtrimR
+    RudtrimL = 69,  // xplm_key_rudtrimL
+    RudtrimR = 70,  // xplm_key_rudtrimR
+    ElvtrimD = 71,  // xplm_key_elvtrimD
+    ElvtrimU = 72,  // xplm_key_elvtrimU
+    Forward = 73,   // xplm_key_forward
+    Down = 74,      // xplm_key_down
+    Left = 75,      // xplm_key_left
+    Right = 76,     // xplm_key_right
+    Back = 77,      // xplm_key_back
+    Tower = 78,     // xplm_key_tower
+    Runway = 79,    // xplm_key_runway
+    Chase = 80,     // xplm_key_chase
+    Free1 = 81,     // xplm_key_free1
+    Free2 = 82,     // xplm_key_free2
+    Spot = 83,      // xplm_key_spot
+    Fullscrn1 = 84, // xplm_key_fullscrn1
+    Fullscrn2 = 85, // xplm_key_fullscrn2
+    Tanspan = 86,   // xplm_key_tanspan
+    Smoke = 87,     // xplm_key_smoke
+    Map = 88,       // xplm_key_map
+    Zoomin = 89,    // xplm_key_zoomin
+    Zoomout = 90,   // xplm_key_zoomout
+    Cycledump = 91, // xplm_key_cycledump
+    Replay = 92,    // xplm_key_replay
+    TranID = 93,    // xplm_key_tranID
+    Ma = 94,        // xplm_key_ma
+}
+
+impl CommandKey {
+    pub fn native(self) -> u8 {
+        self as u8
+    }
+}
