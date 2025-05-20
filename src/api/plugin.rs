@@ -10,7 +10,7 @@ pub use self::error::PluginError;
 pub use self::feature::Feature;
 pub use self::id::PluginId;
 pub use self::info::PluginInfo;
-pub use self::message::AsMessageParam;
+pub use self::message::{AsMessageParam, Message};
 
 pub type Result<T> = std::result::Result<T, PluginError>;
 
