@@ -1,14 +1,40 @@
 use std::ops::Deref;
 
-use super::{unregister_command_handler, UtilitiesError};
+use super::UtilitiesError;
 
 /// An opaque identifier for an X-Plane command
 pub struct Command(xplm_sys::XPLMCommandRef);
 
+impl Command {
+    /// Looks up a command by name.
+    /// See [`super::find_command`] for more details.
+    pub fn find<N: Into<String>>(name: N) -> crate::api::utilities::Result<Option<Command>> {
+        super::find_command(name)
+    }
+
+    /// Executes a given command momentarily, that is, the command begins and ends immediately.
+    /// See [`super::command_once`] for more details.
+    pub fn once(&mut self) {
+        super::command_once(self)
+    }
+
+    /// Starts the execution of a command.
+    /// See [`super::command_begin`] for more details.
+    pub fn begin(&mut self) {
+        super::command_begin(self);
+    }
+
+    /// Ends the execution of a given command that was previously started.
+    /// See [`super::command_end`] for more details.
+    pub fn end(&mut self) {
+        super::command_end(self);
+    }
+}
+
 impl TryFrom<xplm_sys::XPLMCommandRef> for Command {
     type Error = UtilitiesError;
 
-    fn try_from(value: xplm_sys::XPLMCommandRef) -> std::result::Result<Self, Self::Error> {
+    fn try_from(value: xplm_sys::XPLMCommandRef) -> Result<Self, Self::Error> {
         if value.is_null() {
             Err(Self::Error::InvalidCommand)
         } else {
@@ -81,7 +107,7 @@ pub struct CommandHandlerRecord {
 
 impl Drop for CommandHandlerRecord {
     fn drop(&mut self) {
-        unregister_command_handler(self);
+        super::unregister_command_handler(self);
     }
 }
 
