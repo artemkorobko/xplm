@@ -52,8 +52,8 @@ pub fn create_flight_loop<H: FlightLoopHandler>(
             return 0.0;
         }
 
-        let handler = refcon as *mut H;
-        (*handler).handle_flight_loop(
+        let handler = unsafe { &mut *refcon.cast::<H>() };
+        handler.handle_flight_loop(
             elapsed_since_last_call,
             elapsed_since_last_flight_loop,
             counter,
