@@ -21,14 +21,16 @@ pub use lang::Language;
 
 pub type Result<T> = std::result::Result<T, UtilitiesError>;
 
+const PATH_BUF_SIZE: usize = 4096;
+
 /// Returns the full path to the X-System folder. Note that this is a directory path,
 /// so it ends in a trailing `:` or `/`.
 ///
 /// # Returns
 /// Returns system path on success. Otherwise returns [`UtilitiesError`].
 pub fn get_system_path() -> Result<path::PathBuf> {
+    let mut buf = [0; PATH_BUF_SIZE];
     unsafe {
-        let mut buf = [0; 4096];
         xplm_sys::XPLMGetSystemPath(buf.as_mut_ptr());
         ffi::CStr::from_ptr(buf.as_ptr()).to_owned().into_string()
     }
@@ -41,8 +43,8 @@ pub fn get_system_path() -> Result<path::PathBuf> {
 /// # Returns
 /// Returns preferences file path on success. Otherwise returns [`UtilitiesError`].
 pub fn get_prefs_path() -> Result<path::PathBuf> {
+    let mut buf = [0; PATH_BUF_SIZE];
     unsafe {
-        let mut buf = [0; 4096];
         xplm_sys::XPLMGetPrefsPath(buf.as_mut_ptr());
         ffi::CStr::from_ptr(buf.as_ptr()).to_owned().into_string()
     }
@@ -85,10 +87,10 @@ pub fn load_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
         xplm_sys::XPLMLoadDataFile(
             file_type as xplm_sys::XPLMDataFileType,
             file_path_c.as_ptr(),
-        )
+        ) == 1
     };
 
-    if is_loaded == 1 {
+    if is_loaded {
         Ok(())
     } else {
         Err(UtilitiesError::LoadDataFile)
@@ -104,10 +106,10 @@ pub fn clear_replay() -> Result<()> {
         xplm_sys::XPLMLoadDataFile(
             DataFileType::ReplayMovie as xplm_sys::XPLMDataFileType,
             std::ptr::null_mut(),
-        )
+        ) == 1
     };
 
-    if is_loaded == 1 {
+    if is_loaded {
         Ok(())
     } else {
         Err(UtilitiesError::ClearReplay)
@@ -135,10 +137,10 @@ pub fn save_data_file<P: AsRef<path::Path>>(file_type: DataFileType, file_path: 
         xplm_sys::XPLMSaveDataFile(
             file_type as xplm_sys::XPLMDataFileType,
             file_path_c.as_ptr(),
-        )
+        ) == 1
     };
 
-    if is_saved == 1 {
+    if is_saved {
         Ok(())
     } else {
         Err(UtilitiesError::SaveDataFile)
@@ -192,7 +194,7 @@ static ERROR_CALLBACK: OnceLock<fn(&str)> = OnceLock::new();
 /// * `callback` - a function which accepts `&str` messages.
 pub fn set_error_callback(callback: fn(&str)) {
     unsafe extern "C" fn error_callback(message: *const ::std::os::raw::c_char) {
-        let message_c = ffi::CStr::from_ptr(message);
+        let message_c = unsafe { ffi::CStr::from_ptr(message) };
         match message_c.to_str() {
             Ok(message_str) => {
                 if let Some(handler) = ERROR_CALLBACK.get() {
@@ -235,12 +237,12 @@ pub fn speak_string<T: Into<String>>(message: T) {
 /// # Arguments
 /// * `key` - a [`VirtualKey`] code.
 pub fn get_virtual_key_description(key: VirtualKey) -> Result<Option<String>> {
-    unsafe {
-        let opcode = key as ::std::os::raw::c_char;
-        let description_c = xplm_sys::XPLMGetVirtualKeyDescription(opcode);
-        if description_c.is_null() {
-            Ok(None)
-        } else {
+    let opcode = key as ::std::os::raw::c_char;
+    let description_c = unsafe { xplm_sys::XPLMGetVirtualKeyDescription(opcode) };
+    if description_c.is_null() {
+        Ok(None)
+    } else {
+        unsafe {
             ffi::CStr::from_ptr(description_c)
                 .to_owned()
                 .into_string()
@@ -364,12 +366,18 @@ unsafe extern "C" fn command_handler(
 ) -> ::std::os::raw::c_int {
     const CONTINUE_EXECUTION: ::std::os::raw::c_int = 1;
     const TERMINATE_EXECUTION: ::std::os::raw::c_int = 1;
-    let link = refcon as *mut CommandLink;
-    if (*link).links_with(command) {
+
+    if refcon.is_null() {
+        return CONTINUE_EXECUTION;
+    }
+
+    let link = unsafe { &mut *refcon.cast::<CommandLink>() };
+
+    if link.links_with(command) {
         match phase as ::std::os::raw::c_uint {
-            xplm_sys::xplm_CommandBegin => (*link).command_begin(),
-            xplm_sys::xplm_CommandContinue => (*link).command_continue(),
-            xplm_sys::xplm_CommandEnd => (*link).command_end(),
+            xplm_sys::xplm_CommandBegin => link.command_begin(),
+            xplm_sys::xplm_CommandContinue => link.command_continue(),
+            xplm_sys::xplm_CommandEnd => link.command_end(),
             _ => {}
         };
         TERMINATE_EXECUTION
