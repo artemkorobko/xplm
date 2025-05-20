@@ -106,9 +106,9 @@ unsafe extern "C" fn menu_handler<H: MenuHandler>(
         return;
     }
 
-    let handler_ptr = menu_ref as *mut H;
-    let index = item_ref as *mut usize;
-    (*handler_ptr).handle_click(index as usize);
+    let handler_ptr = unsafe { &mut *menu_ref.cast::<H>() };
+    let index = item_ref.cast::<usize>();
+    handler_ptr.handle_click(index as usize);
 }
 
 /// This function destroys a menu that you have created. Use this to remove a submenu if necessary.
