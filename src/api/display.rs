@@ -42,8 +42,8 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         refcon: *mut ::std::os::raw::c_void,
     ) {
         if let (Ok(id), false) = (WindowId::try_from(id), refcon.is_null()) {
-            let handler = refcon as *mut H;
-            (*handler).draw(&id);
+            let handler = unsafe { &mut *refcon.cast::<H>() };
+            handler.draw(&id);
         }
     }
 
@@ -57,9 +57,9 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         if let (Ok(id), false) = (WindowId::try_from(id), refcon.is_null()) {
             return match MouseStatus::try_from(mouse) {
                 Ok(status) => {
-                    let handler = refcon as *mut H;
+                    let handler = unsafe { &mut *refcon.cast::<H>() };
                     let coord = Coord::default().x(x).y(y);
-                    (*handler).mouse_click(&id, coord, status).into()
+                    handler.mouse_click(&id, coord, status).into()
                 }
                 Err(err) => {
                     crate::error!("{}", err);
@@ -80,14 +80,12 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         _: ::std::os::raw::c_int,
     ) {
         if let (Ok(id), false) = (WindowId::try_from(id), refcon.is_null()) {
-            let handler = refcon as *mut H;
+            let handler = unsafe { &mut *refcon.cast::<H>() };
             match VirtualKey::try_from(virtual_key) {
-                Ok(virtual_key) => (*handler).handle_key(
-                    &id,
-                    key as u8 as char,
-                    virtual_key,
-                    KeyFlags::from(flags),
-                ),
+                Ok(virtual_key) => {
+                    let key = key as u8 as char;
+                    handler.handle_key(&id, key, virtual_key, KeyFlags::from(flags))
+                }
                 Err(err) => {
                     crate::error!("{}", err);
                 }
@@ -102,9 +100,9 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         refcon: *mut ::std::os::raw::c_void,
     ) -> xplm_sys::XPLMCursorStatus {
         if let (Ok(id), false) = (WindowId::try_from(id), refcon.is_null()) {
-            let handler = refcon as *mut H;
+            let handler = unsafe { &mut *refcon.cast::<H>() };
             let coord = Coord::default().x(x).y(y);
-            (*handler).handle_cursor(&id, coord);
+            handler.handle_cursor(&id, coord);
             return xplm_sys::xplm_CursorDefault as _;
         }
 
@@ -120,11 +118,11 @@ pub fn create_window_ex<H: WindowHandler>(rect: &Rect, handler: H) -> Result<Win
         refcon: *mut ::std::os::raw::c_void,
     ) -> ::std::os::raw::c_int {
         if let (Ok(id), false) = (WindowId::try_from(id), refcon.is_null()) {
-            let handler = refcon as *mut H;
+            let handler = unsafe { &mut *refcon.cast::<H>() };
             return match WheelAxis::try_from(wheel) {
                 Ok(wheel_axis) => {
                     let coord = Coord::default().x(x).y(y);
-                    (*handler)
+                    handler
                         .handle_mouse_wheel(&id, coord, wheel_axis, clicks)
                         .into()
                 }
