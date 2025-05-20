@@ -17,7 +17,7 @@ impl Deref for PluginId {
 impl TryFrom<xplm_sys::XPLMPluginID> for PluginId {
     type Error = PluginError;
 
-    fn try_from(value: xplm_sys::XPLMPluginID) -> std::result::Result<Self, PluginError> {
+    fn try_from(value: xplm_sys::XPLMPluginID) -> Result<Self, PluginError> {
         if value < 0 {
             Err(Self::Error::InvalidId(value))
         } else {

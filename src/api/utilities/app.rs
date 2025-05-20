@@ -15,7 +15,7 @@ pub enum HostApplicationId {
 impl TryFrom<xplm_sys::XPLMHostApplicationID> for HostApplicationId {
     type Error = UtilitiesError;
 
-    fn try_from(value: xplm_sys::XPLMHostApplicationID) -> std::result::Result<Self, Self::Error> {
+    fn try_from(value: xplm_sys::XPLMHostApplicationID) -> Result<Self, Self::Error> {
         match value as ::std::os::raw::c_uint {
             xplm_sys::xplm_Host_Unknown => Ok(Self::Unknown),
             xplm_sys::xplm_Host_XPlane => Ok(Self::XPlane),

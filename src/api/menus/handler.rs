@@ -1,4 +1,4 @@
-use super::{destroy_menu, MenuId};
+use super::{MenuId, destroy_menu};
 
 /// A menu callback handler.
 pub trait MenuHandler: 'static {

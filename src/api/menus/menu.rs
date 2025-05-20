@@ -14,7 +14,7 @@ impl MenuId {
 impl TryFrom<xplm_sys::XPLMMenuID> for MenuId {
     type Error = MenusError;
 
-    fn try_from(value: xplm_sys::XPLMMenuID) -> std::result::Result<Self, MenusError> {
+    fn try_from(value: xplm_sys::XPLMMenuID) -> Result<Self, MenusError> {
         if value.is_null() {
             Err(Self::Error::InvalidId)
         } else {
@@ -37,7 +37,7 @@ impl MenuItemId {
 impl TryFrom<::std::os::raw::c_int> for MenuItemId {
     type Error = MenusError;
 
-    fn try_from(value: ::std::os::raw::c_int) -> std::result::Result<Self, Self::Error> {
+    fn try_from(value: ::std::os::raw::c_int) -> Result<Self, Self::Error> {
         if value < 0 {
             Err(Self::Error::InvalidMenuItemId)
         } else {

@@ -1,6 +1,6 @@
 use crate::api::utilities::VirtualKey;
 
-use super::{destroy_window, Coord, DisplayError, EventState, KeyFlags, MouseStatus, WheelAxis};
+use super::{Coord, DisplayError, EventState, KeyFlags, MouseStatus, WheelAxis, destroy_window};
 
 /// X-Plane window identifier.
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -16,7 +16,7 @@ impl WindowId {
 impl TryFrom<xplm_sys::XPLMWindowID> for WindowId {
     type Error = DisplayError;
 
-    fn try_from(value: xplm_sys::XPLMWindowID) -> std::result::Result<Self, Self::Error> {
+    fn try_from(value: xplm_sys::XPLMWindowID) -> Result<Self, Self::Error> {
         if value.is_null() {
             Err(Self::Error::InvalidWindowId)
         } else {
@@ -48,8 +48,7 @@ pub trait WindowHandler: 'static {
     /// # Arguments
     /// * `key` - the key character which has been pressed or released.
     /// * `virtual_key` - the virtual key which has been pressed or released.
-    /// * `flags` - the key flags bitmap which contains state for special keys and whether the key
-    ///     has been pressed or released.
+    /// * `flags` - the key flags bitmap which contains state for special keys and whether the key has been pressed or released.
     fn handle_key(&mut self, id: &WindowId, key: char, virtual_key: VirtualKey, flags: KeyFlags);
 
     /// Get's called when the mouse is over the plugin window.

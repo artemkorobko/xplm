@@ -13,7 +13,7 @@ pub enum MouseStatus {
 impl TryFrom<xplm_sys::XPLMMouseStatus> for MouseStatus {
     type Error = DisplayError;
 
-    fn try_from(value: xplm_sys::XPLMMouseStatus) -> std::result::Result<Self, Self::Error> {
+    fn try_from(value: xplm_sys::XPLMMouseStatus) -> Result<Self, Self::Error> {
         match value as _ {
             xplm_sys::xplm_MouseUp => Ok(Self::Up),
             xplm_sys::xplm_MouseDown => Ok(Self::Down),
@@ -34,7 +34,7 @@ pub enum WheelAxis {
 impl TryFrom<::std::os::raw::c_int> for WheelAxis {
     type Error = DisplayError;
 
-    fn try_from(value: ::std::os::raw::c_int) -> std::result::Result<Self, Self::Error> {
+    fn try_from(value: ::std::os::raw::c_int) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Self::Vertical),
             1 => Ok(Self::Horizontal),

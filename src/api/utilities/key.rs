@@ -120,7 +120,7 @@ pub enum VirtualKey {
 impl TryFrom<::std::os::raw::c_char> for VirtualKey {
     type Error = UtilitiesError;
 
-    fn try_from(value: ::std::os::raw::c_char) -> std::result::Result<Self, Self::Error> {
+    fn try_from(value: ::std::os::raw::c_char) -> Result<Self, Self::Error> {
         match value as _ {
             xplm_sys::XPLM_VK_BACK => Ok(Self::Back),
             xplm_sys::XPLM_VK_TAB => Ok(Self::Tab),

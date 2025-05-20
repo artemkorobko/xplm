@@ -1,4 +1,4 @@
-use super::{destroy_flight_loop, ProcessingError};
+use super::{ProcessingError, destroy_flight_loop};
 
 pub struct FlightLoopId(xplm_sys::XPLMFlightLoopID);
 
@@ -12,7 +12,7 @@ impl FlightLoopId {
 impl TryFrom<xplm_sys::XPLMFlightLoopID> for FlightLoopId {
     type Error = ProcessingError;
 
-    fn try_from(value: xplm_sys::XPLMMenuID) -> std::result::Result<Self, ProcessingError> {
+    fn try_from(value: xplm_sys::XPLMMenuID) -> Result<Self, ProcessingError> {
         if value.is_null() {
             Err(Self::Error::InvalidFlightLoopId)
         } else {

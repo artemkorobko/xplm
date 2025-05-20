@@ -13,7 +13,7 @@ pub enum MenuItemState {
 impl TryFrom<xplm_sys::XPLMMenuCheck> for MenuItemState {
     type Error = MenusError;
 
-    fn try_from(value: xplm_sys::XPLMMenuCheck) -> std::result::Result<Self, Self::Error> {
+    fn try_from(value: xplm_sys::XPLMMenuCheck) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(MenuItemState::NoCheck),
             1 => Ok(MenuItemState::Unchecked),

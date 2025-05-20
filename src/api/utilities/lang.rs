@@ -18,7 +18,7 @@ pub enum Language {
 impl TryFrom<xplm_sys::XPLMLanguageCode> for Language {
     type Error = UtilitiesError;
 
-    fn try_from(value: xplm_sys::XPLMLanguageCode) -> std::result::Result<Self, Self::Error> {
+    fn try_from(value: xplm_sys::XPLMLanguageCode) -> Result<Self, Self::Error> {
         match value as ::std::os::raw::c_uint {
             xplm_sys::xplm_Language_Unknown => Ok(Self::Unknown),
             xplm_sys::xplm_Language_English => Ok(Self::English),
