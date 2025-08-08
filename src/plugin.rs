@@ -41,9 +41,9 @@ pub const MIN_MESSAGE_ID: i32 = 0x8000000;
 macro_rules! register_plugin {
     (
         instance = $plugin_type: ty,
-        name = $name: literal,
-        signature = $signature: literal,
-        description = $description: literal,
+        name = $name: expr,
+        signature = $signature: expr,
+        description = $description: expr,
     ) => {
         use xplm::sys;
 
