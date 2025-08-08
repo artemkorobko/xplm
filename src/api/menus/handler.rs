@@ -6,14 +6,14 @@ pub trait MenuHandler: 'static {
     ///
     /// # Arguments
     /// * `index` - menu item index.
-    fn handle_click(&mut self, index: usize);
+    fn on_menu_selected(&mut self, index: usize);
 }
 
 impl<F> MenuHandler for F
 where
     F: 'static + FnMut(usize),
 {
-    fn handle_click(&mut self, index: usize) {
+    fn on_menu_selected(&mut self, index: usize) {
         self(index)
     }
 }

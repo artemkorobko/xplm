@@ -5,14 +5,12 @@ pub mod state;
 
 use std::{ffi, ops::Deref};
 
-use handler::Menu;
-
-pub use self::error::MenusError;
-pub use self::handler::MenuHandler;
-pub use self::menu::MenuId;
-pub use self::menu::MenuItem;
-pub use self::menu::MenuItemId;
-pub use self::state::MenuItemState;
+pub use error::MenusError;
+pub use handler::{Menu, MenuHandler};
+pub use menu::MenuId;
+pub use menu::MenuItem;
+pub use menu::MenuItemId;
+pub use state::MenuItemState;
 
 use super::utilities::Command;
 
@@ -108,7 +106,7 @@ unsafe extern "C" fn menu_handler<H: MenuHandler>(
 
     let handler_ptr = unsafe { &mut *menu_ref.cast::<H>() };
     let index = item_ref.cast::<usize>();
-    handler_ptr.handle_click(index as usize);
+    handler_ptr.on_menu_selected(index as usize);
 }
 
 /// This function destroys a menu that you have created. Use this to remove a submenu if necessary.
