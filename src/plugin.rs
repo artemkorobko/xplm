@@ -1,3 +1,5 @@
+use crate::api::plugin::Message;
+
 /// The trait that all plugins should implement
 pub trait XPlugin: Sized {
     /// The error type that a plugin may encounter when starting up or enabling
@@ -28,7 +30,7 @@ pub trait XPlugin: Sized {
     /// Called when the plugin receives a message
     ///
     /// The default implementation does nothing.
-    fn receive_message(&mut self, _: crate::api::plugin::Message) {}
+    fn receive_message(&mut self, _: Message) {}
 }
 
 /// By convention, plugin-defined notifications should have the high bit set
@@ -43,8 +45,6 @@ macro_rules! register_plugin {
         signature = $signature: literal,
         description = $description: literal,
     ) => {
-        use xplm::api::plugin::Message;
-        use xplm::plugin::XPlugin;
         use xplm::sys;
 
         static mut PLUGIN_INSTANCE: std::sync::OnceLock<$plugin_type> = std::sync::OnceLock::new();

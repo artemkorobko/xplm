@@ -1,19 +1,15 @@
 pub mod data_info;
 pub mod data_ref;
-mod data_ref_typed;
 pub mod data_refs;
 pub mod data_type;
 pub mod error;
 
-pub use self::data_info::DataRefInfo;
-pub use self::data_info::Info;
-pub use self::data_ref::DataRef;
-pub use self::data_ref_typed::{
-    ArrayRead, ArrayWrite, DataRead, DataRefArray, DataRefValue, DataWrite, ReadOnly, ReadWrite,
-};
+pub use self::data_info::{DataRefInfo, Info};
+pub use self::data_ref::{ArrayRead, ArrayWrite, DataRead, DataWrite};
+pub use self::data_ref::{DataRef, IntoDataType, ReadOnly, ReadWrite};
+pub use self::data_ref::{DataRefArray, DataRefString, DataRefValue};
 pub use self::data_refs::DataRefsIter;
-pub use self::data_type::DataType;
-pub use self::data_type::DataTypeId;
+pub use self::data_type::{DataType, DataTypeId};
 pub use self::error::DataAccessError;
 
 use std::ffi;

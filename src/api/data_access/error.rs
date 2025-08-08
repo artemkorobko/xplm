@@ -29,6 +29,9 @@ pub enum DataAccessError {
     /// Invalid data ref name passed to X-Plane.
     #[error("invalid data ref name string {0}")]
     InvalidDataRefName(ffi::NulError),
+    /// Invalid dataref value string.
+    #[error("invalid dataref value string")]
+    InvalidValueString,
     /// Plugin error.
     #[error("plugin error {0}")]
     Plugin(PluginError),

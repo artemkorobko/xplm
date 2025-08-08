@@ -1,4 +1,5 @@
 /// Enumeration that defines the type of the data behind a data reference.
+#[derive(Debug)]
 pub enum DataType {
     /// Data of a type the current XPLM doesn't do.
     Unknown,
@@ -17,6 +18,7 @@ pub enum DataType {
 }
 
 /// Data type flags bitmap.
+#[derive(Debug)]
 pub struct DataTypeId(xplm_sys::XPLMDataTypeID);
 
 impl DataTypeId {
